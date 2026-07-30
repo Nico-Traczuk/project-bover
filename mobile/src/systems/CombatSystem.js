@@ -1,0 +1,154 @@
+import { Goblin } from '../entities/enemies/Goblin.js'
+import { Projectile } from '../entities/Projectile.js'
+import { CollisionSystem } from './CollisionSystem.js'
+import { enemiesForDepth, waveCount, enemyCountForWave } from '../data/enemies.js'
+
+export class CombatSystem {
+  constructor({ player, upgradeSystem, depth, stage, modifier, onWaveCleared, onRoomCleared, onPlayerDeath, onGoldEarned, onXpEarned }) {
+    this.player = player
+    this.upgradeSystem = upgradeSystem
+    this.depth = depth
+    this.stage = stage
+    this.modifier = modifier ?? null
+    this.onWaveCleared = onWaveCleared
+    this.onRoomCleared = onRoomCleared
+    this.onPlayerDeath = onPlayerDeath
+    this.onGoldEarned = onGoldEarned
+    this.onXpEarned = onXpEarned
+
+    this.enemies = []
+    this.projectiles = []
+    this.collision = new CollisionSystem()
+    this.currentWave = 0
+    this.totalWaves = waveCount(depth)
+    this._spawnNext = true
+    this.roomOver = false
+  }
+
+  _spawnWave() {
+    this.currentWave++
+    const { min, max } = enemyCountForWave(this.depth)
+    const count = min + Math.floor(Math.random() * (max - min + 1)) + (this.modifier?.extraEnemies ?? 0)
+    const available = enemiesForDepth(this.depth)
+
+    for (let i = 0; i < count; i++) {
+      const def = available[Math.floor(Math.random() * available.length)]
+      const enemy = this._makeEnemy(def.key)
+      // Spawn at arena edges (arena is 700×440 starting at 0,0 in stage-local coords)
+      const edge = Math.floor(Math.random() * 4)
+      const margin = 60
+      const w = 700
+      const h = 440
+      if (edge === 0) { enemy.x = margin + Math.random() * (w - margin * 2); enemy.y = margin }
+      else if (edge === 1) { enemy.x = w - margin; enemy.y = margin + Math.random() * (h - margin * 2) }
+      else if (edge === 2) { enemy.x = margin + Math.random() * (w - margin * 2); enemy.y = h - margin }
+      else { enemy.x = margin; enemy.y = margin + Math.random() * (h - margin * 2) }
+      this.enemies.push(enemy)
+      this.stage.addChild(enemy)
+    }
+    this._spawnNext = false
+  }
+
+  _makeEnemy(key) {
+    const enemy = new Goblin(this.depth)
+    if (this.modifier?.enemyHpMult) {
+      enemy.stats.hp = Math.round(enemy.stats.hp * this.modifier.enemyHpMult)
+      enemy.stats.maxHp = enemy.stats.hp
+    }
+    if (this.modifier?.enemySpeedMult) {
+      enemy.stats.speed = Math.round(enemy.stats.speed * this.modifier.enemySpeedMult)
+    }
+    return enemy
+  }
+
+  tick(deltaSeconds, playerX, playerY, aimAngle) {
+    if (this.roomOver) return
+    if (this._spawnNext) this._spawnWave()
+
+    // Tick player (cooldowns, i-frames)
+    this.player.tick(deltaSeconds)
+
+    // Player auto-attack
+    if (this.player.isAttackReady() && this.enemies.length > 0) {
+      this.player.resetAttackCooldown()
+      const attackData = this.player.getAttackData(aimAngle)
+      attackData.forEach(a => {
+        const p = new Projectile(a)
+        this.projectiles.push(p)
+        this.stage.addChild(p)
+      })
+    }
+
+    // Tick enemies and gather their attacks
+    this.enemies.forEach(e => {
+      if (!e.isAlive()) return
+      e.tick(deltaSeconds, playerX, playerY)
+      const attack = e.getAttack(playerX, playerY)
+      if (attack) {
+        if (attack.isMelee) {
+          // Melee hits player immediately if in range
+          this.player.takeDamage(attack.damage)
+        } else {
+          const p = new Projectile(attack)
+          this.projectiles.push(p)
+          this.stage.addChild(p)
+        }
+      }
+    })
+
+    // Tick all projectiles
+    this.projectiles.forEach(p => p.tick(deltaSeconds))
+
+    // Collision: player projectiles → enemies
+    const pHits = this.collision.checkProjectilesVsEnemies(this.projectiles, this.enemies)
+    pHits.forEach(({ projectile, enemy }) => {
+      enemy.takeDamage(projectile.damage)
+      if (projectile.frostSlow) enemy.slow(1.5)
+      if (!projectile.isMelee) {
+        projectile.lifetime = 0 // mark expired
+      }
+      if (!enemy.isAlive()) {
+        const goldMult = this.modifier?.goldMult ?? 1
+        const gold = Math.round((enemy.goldDrop() + (this.upgradeSystem?.stats.goldBonus || 0)) * goldMult)
+        const xp = enemy.stats.xpReward
+        this.stage.removeChild(enemy)
+        this.onGoldEarned(gold)
+        this.onXpEarned(xp)
+      }
+    })
+
+    // Collision: enemy projectiles → player
+    const eHits = this.collision.checkEnemyProjectilesVsPlayer(this.projectiles, this.player)
+    eHits.forEach(p => {
+      this.player.takeDamage(p.damage)
+      p.lifetime = 0
+    })
+
+    // Remove expired projectiles
+    this.projectiles = this.projectiles.filter(p => {
+      if (p.isExpired()) { this.stage.removeChild(p); return false }
+      return true
+    })
+
+    // Remove dead enemies
+    this.enemies = this.enemies.filter(e => e.isAlive())
+
+    // Check player death
+    if (!this.player.isAlive()) {
+      this.roomOver = true
+      this.onPlayerDeath()
+      return
+    }
+
+    // Check wave/room clear
+    if (this.enemies.length === 0 && !this._spawnNext) {
+      if (this.currentWave < this.totalWaves) {
+        this._spawnNext = true
+        this.onWaveCleared(this.currentWave)
+      } else {
+        this.roomOver = true
+        this.onRoomCleared()
+      }
+    }
+  }
+}
