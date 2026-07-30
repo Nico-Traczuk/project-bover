@@ -7,13 +7,13 @@ export class BossVictoryScene extends Container {
     super()
 
     const bg = new Graphics()
-    bg.rect(0, 0, 800, 600).fill(0x0f172a)
+    bg.rect(0, 0, 450, 800).fill(0x0f172a)
     this.addChild(bg)
 
-    const title = new Text({ text: 'BOSS DEFEATED!', style: { fill: 0xF59E0B, fontSize: 40, fontWeight: 'bold' } })
+    const title = new Text({ text: 'BOSS DEFEATED!', style: { fill: 0xF59E0B, fontSize: 36, fontWeight: 'bold' } })
     title.anchor.set(0.5)
-    title.x = 400
-    title.y = 140
+    title.x = 225
+    title.y = 200
     this.addChild(title)
 
     const stats = [
@@ -23,8 +23,8 @@ export class BossVictoryScene extends Container {
     stats.forEach((s, i) => {
       const t = new Text({ text: s, style: { fill: 0x9CA3AF, fontSize: 20 } })
       t.anchor.set(0.5)
-      t.x = 400
-      t.y = 240 + i * 35
+      t.x = 225
+      t.y = 300 + i * 40
       this.addChild(t)
     })
 
@@ -37,8 +37,8 @@ export class BossVictoryScene extends Container {
     btnT.x = 100
     btnT.y = 25
     btn.addChild(btnT)
-    btn.x = 300
-    btn.y = 380
+    btn.x = 125
+    btn.y = 460
     btn.eventMode = 'static'
     btn.cursor = 'pointer'
     btn.on('pointerup', () => {

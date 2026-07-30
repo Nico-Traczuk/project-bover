@@ -8,13 +8,13 @@ export class BootScene extends Container {
     super()
 
     const bg = new Graphics()
-    bg.rect(0, 0, 800, 600).fill(0x1a1a2e)
+    bg.rect(0, 0, 450, 800).fill(0x1a1a2e)
     this.addChild(bg)
 
     const label = new Text({ text: 'Loading...', style: { fill: 0xffffff, fontSize: 24 } })
     label.anchor.set(0.5)
-    label.x = 400
-    label.y = 300
+    label.x = 225
+    label.y = 400
     this.addChild(label)
 
     this._boot(label).catch(err => {

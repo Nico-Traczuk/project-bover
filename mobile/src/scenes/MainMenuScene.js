@@ -37,80 +37,80 @@ export class MainMenuScene extends Container {
     super()
 
     const bg = new Graphics()
-    bg.rect(0, 0, 800, 600).fill(0x0f172a)
+    bg.rect(0, 0, 450, 800).fill(0x0f172a)
     this.addChild(bg)
 
     // Decorative horizontal lines top and bottom
     const topLine = new Graphics()
-    topLine.rect(0, 72, 800, 2).fill({ color: 0xC8A857, alpha: 0.3 })
+    topLine.rect(0, 70, 450, 2).fill({ color: 0xC8A857, alpha: 0.3 })
     this.addChild(topLine)
     const botLine = new Graphics()
-    botLine.rect(0, 526, 800, 2).fill({ color: 0xC8A857, alpha: 0.3 })
+    botLine.rect(0, 728, 450, 2).fill({ color: 0xC8A857, alpha: 0.3 })
     this.addChild(botLine)
 
     // Title panel
-    const titlePanel = makePanel(500, 74, 0x080e1a, 0xC8A857)
-    titlePanel.x = 150
-    titlePanel.y = 108
+    const titlePanel = makePanel(380, 74, 0x080e1a, 0xC8A857)
+    titlePanel.x = 35
+    titlePanel.y = 150
     this.addChild(titlePanel)
 
-    const title = new Text({ text: 'PROJECTO BOVER', style: { fill: 0xF59E0B, fontSize: 38, fontWeight: 'bold' } })
+    const title = new Text({ text: 'PROJECTO BOVER', style: { fill: 0xF59E0B, fontSize: 32, fontWeight: 'bold' } })
     title.anchor.set(0.5)
-    title.x = 400
-    title.y = 145
+    title.x = 225
+    title.y = 187
     this.addChild(title)
 
     // Divider under title
     const divTex = Assets.get('ui_divider')
     if (divTex) {
       const div = new Sprite(divTex)
-      div.width = 300; div.height = 10
-      div.x = 250; div.y = 196
+      div.width = 240; div.height = 10
+      div.x = 105; div.y = 238
       div.tint = 0xC8A857
       this.addChild(div)
     }
 
-    const sub = new Text({ text: 'A Medieval Roguelite', style: { fill: 0x94A3B8, fontSize: 17 } })
+    const sub = new Text({ text: 'A Medieval Roguelite', style: { fill: 0x94A3B8, fontSize: 16 } })
     sub.anchor.set(0.5)
-    sub.x = 400
-    sub.y = 220
+    sub.x = 225
+    sub.y = 260
     this.addChild(sub)
 
     this._buildButtons()
 
     if (authState.player) {
       const gold = new Text({
-        text: `Welcome, ${authState.player.username ?? 'Hero'}   ·   Gold: ${authState.player.gold}`,
+        text: `Welcome, ${authState.player.username ?? 'Hero'}  ·  Gold: ${authState.player.gold}`,
         style: { fill: 0xF59E0B, fontSize: 14 },
       })
       gold.anchor.set(0.5)
-      gold.x = 400
-      gold.y = 542
+      gold.x = 225
+      gold.y = 752
       this.addChild(gold)
     }
   }
 
   _buildButtons() {
-    const playBtn = makePanelButton('▶   PLAY', 240, 60, 0x0a1f0a, () => this._goPlay())
-    playBtn.x = 280
-    playBtn.y = 280
+    const playBtn = makePanelButton('▶   PLAY', 220, 60, 0x0a1f0a, () => this._goPlay())
+    playBtn.x = 115
+    playBtn.y = 320
     this.addChild(playBtn)
 
     if (!authState.player) {
-      const loginBtn = makePanelButton('LOGIN', 170, 44, 0x0f172a, () => this._showLogin())
-      loginBtn.x = 215
-      loginBtn.y = 380
+      const loginBtn = makePanelButton('LOGIN', 180, 44, 0x0f172a, () => this._showLogin())
+      loginBtn.x = 20
+      loginBtn.y = 430
       this.addChild(loginBtn)
 
-      const regBtn = makePanelButton('REGISTER', 170, 44, 0x0f172a, () => this._showRegister())
-      regBtn.x = 415
-      regBtn.y = 380
+      const regBtn = makePanelButton('REGISTER', 180, 44, 0x0f172a, () => this._showRegister())
+      regBtn.x = 250
+      regBtn.y = 430
       this.addChild(regBtn)
     } else {
       const logoutBtn = new Text({ text: 'Logout', style: { fill: 0x6B7280, fontSize: 14 } })
       logoutBtn.anchor.set(0.5)
-      logoutBtn.x = 400
-      logoutBtn.y = 380
+      logoutBtn.x = 225
+      logoutBtn.y = 430
       logoutBtn.eventMode = 'static'
       logoutBtn.cursor = 'pointer'
       logoutBtn.on('pointerup', () => this._logout())

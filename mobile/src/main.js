@@ -4,8 +4,8 @@ import { inputManager } from './core/InputManager.js'
 import { authState } from './core/AuthState.js'
 import { BootScene } from './scenes/BootScene.js'
 
-const GAME_W = 800
-const GAME_H = 600
+const GAME_W = 450
+const GAME_H = 800
 
 const app = new Application()
 await app.init({

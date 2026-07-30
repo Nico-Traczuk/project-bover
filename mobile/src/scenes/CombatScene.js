@@ -15,13 +15,13 @@ import { fadeToScene } from '../core/transition.js'
 import { getRoomData } from '../data/rooms.js'
 import { xpForLevel } from '../data/upgrades.js'
 
-const ARENA = { x: 50, y: 80, w: 700, h: 440 }
+const ARENA = { x: 0, y: 76, w: 450, h: 524 }
 
 const DOOR_SLOTS = {
-  east:  { rx: 660, ry: 180, rw: 40, rh: 80, cx: 680, cy: 220 },
-  west:  { rx:   0, ry: 180, rw: 40, rh: 80, cx:  20, cy: 220 },
-  north: { rx: 310, ry:   0, rw: 80, rh: 40, cx: 350, cy:  20 },
-  south: { rx: 310, ry: 400, rw: 80, rh: 40, cx: 350, cy: 420 },
+  east:  { rx: 410, ry: 192, rw: 40, rh: 80, cx: 430, cy: 232 },
+  west:  { rx:   0, ry: 192, rw: 40, rh: 80, cx:  20, cy: 232 },
+  north: { rx: 165, ry:   0, rw: 80, rh: 40, cx: 205, cy:  20 },
+  south: { rx: 165, ry: 484, rw: 80, rh: 40, cx: 205, cy: 504 },
 }
 
 const TYPE_COLORS = {
@@ -82,7 +82,7 @@ export class CombatScene extends Container {
 
   _build(depth) {
     const bg = new Graphics()
-    bg.rect(0, 0, 800, 600).fill(this._theme.floor)
+    bg.rect(0, 0, 450, 800).fill(this._theme.floor)
     this.addChild(bg)
 
     const arena = new Graphics()
@@ -102,58 +102,57 @@ export class CombatScene extends Container {
     this._player.y = ARENA.h / 2
     this._stage.addChild(this._player)
 
-    // HUD left panel frame (covers level text + XP bar + health bar)
+    // Top HUD panel — full width, 76px tall
     const hudPanelTex = Assets.get('ui_panel_fill')
     if (hudPanelTex) {
       const hudFill = new NineSliceSprite({ texture: hudPanelTex, leftWidth: 10, topHeight: 10, rightWidth: 10, bottomHeight: 10 })
-      hudFill.width = 290
-      hudFill.height = 52
-      hudFill.x = ARENA.x - 4
-      hudFill.y = 28
+      hudFill.width = 450; hudFill.height = 76; hudFill.x = 0; hudFill.y = 0
       hudFill.tint = 0x0a0f1a
       this.addChild(hudFill)
       const hudBorderTex = Assets.get('ui_panel_border')
       if (hudBorderTex) {
         const hudBorder = new NineSliceSprite({ texture: hudBorderTex, leftWidth: 10, topHeight: 10, rightWidth: 10, bottomHeight: 10 })
-        hudBorder.width = 290
-        hudBorder.height = 52
-        hudBorder.x = ARENA.x - 4
-        hudBorder.y = 28
+        hudBorder.width = 450; hudBorder.height = 76; hudBorder.x = 0; hudBorder.y = 0
         hudBorder.tint = 0x6B7280
         this.addChild(hudBorder)
       }
     }
 
-    this._healthBar = new HealthBar(200, 16)
-    this._healthBar.x = ARENA.x + 4
-    this._healthBar.y = 56
-    this.addChild(this._healthBar)
-
-    this._goldDisplay = new GoldDisplay()
-    this._goldDisplay.x = 576
-    this._goldDisplay.y = 52
-    this.addChild(this._goldDisplay)
-
-    const depthText = new Text({ text: `Depth ${depth}`, style: { fill: 0x94A3B8, fontSize: 14 } })
-    depthText.x = 360
-    depthText.y = 56
-    this.addChild(depthText)
-
-    this._levelText = new Text({ text: 'Level 1', style: { fill: 0xF5DEB3, fontSize: 14 } })
-    this._levelText.x = ARENA.x + 4
-    this._levelText.y = 36
+    this._levelText = new Text({ text: 'Level 1', style: { fill: 0xF5DEB3, fontSize: 13 } })
+    this._levelText.x = 8
+    this._levelText.y = 8
     this.addChild(this._levelText)
 
-    this._xpBar = new XpBar(190, 12)
-    this._xpBar.x = ARENA.x + 82
-    this._xpBar.y = 38
+    this._xpBar = new XpBar(180, 10)
+    this._xpBar.x = 74
+    this._xpBar.y = 10
     this.addChild(this._xpBar)
     this._xpBar.update(0, xpForLevel(1))
 
-    // Mini-map (bottom-right of screen)
+    this._healthBar = new HealthBar(240, 16)
+    this._healthBar.x = 8
+    this._healthBar.y = 32
+    this.addChild(this._healthBar)
+
+    const depthText = new Text({ text: `Depth ${depth}`, style: { fill: 0x94A3B8, fontSize: 12 } })
+    depthText.x = 8
+    depthText.y = 54
+    this.addChild(depthText)
+
+    this._goldDisplay = new GoldDisplay()
+    this._goldDisplay.x = 310
+    this._goldDisplay.y = 8
+    this.addChild(this._goldDisplay)
+
+    // Bottom HUD strip
+    const bottomBg = new Graphics()
+    bottomBg.rect(0, 600, 450, 200).fill(0x0a0f1a)
+    this.addChild(bottomBg)
+
+    // Mini-map in bottom HUD
     this._mapOverlay = new MapOverlay()
-    this._mapOverlay.x = 615
-    this._mapOverlay.y = 524
+    this._mapOverlay.x = 270
+    this._mapOverlay.y = 614
     this.addChild(this._mapOverlay)
     this._mapOverlay.update(runState._mapData, runState._currentNodeId, runState._clearedNodeIds)
 
@@ -267,35 +266,35 @@ export class CombatScene extends Container {
   _showRoomAnnouncement(name, modifier) {
     const bannerH = modifier ? 82 : 46
     const c = new Container()
-    c.x = 160
+    c.x = (450 - 320) / 2
     c.y = 92
 
     const bg = new Graphics()
-    bg.rect(0, 0, 480, bannerH).fill({ color: 0x000000, alpha: 0.65 })
+    bg.rect(0, 0, 320, bannerH).fill({ color: 0x000000, alpha: 0.65 })
     c.addChild(bg)
 
-    const nameTxt = new Text({ text: name, style: { fill: 0xffffff, fontSize: 22, fontWeight: 'bold' } })
+    const nameTxt = new Text({ text: name, style: { fill: 0xffffff, fontSize: 20, fontWeight: 'bold' } })
     nameTxt.anchor.set(0.5)
-    nameTxt.x = 240
+    nameTxt.x = 160
     nameTxt.y = 22
     c.addChild(nameTxt)
 
     if (modifier) {
       const badgeColor = modifier.type === 'curse' ? 0xEF4444 : 0x16A34A
       const badge = new Graphics()
-      badge.rect(140, 40, 200, 22).fill(badgeColor)
+      badge.rect(60, 40, 200, 22).fill(badgeColor)
       c.addChild(badge)
 
       const badgeTxt = new Text({ text: modifier.label, style: { fill: 0xffffff, fontSize: 13, fontWeight: 'bold' } })
       badgeTxt.anchor.set(0.5)
-      badgeTxt.x = 240
+      badgeTxt.x = 160
       badgeTxt.y = 51
       c.addChild(badgeTxt)
 
       const descColor = modifier.type === 'curse' ? 0xFCA5A5 : 0x86EFAC
       const descTxt = new Text({ text: modifier.desc, style: { fill: descColor, fontSize: 12 } })
       descTxt.anchor.set(0.5)
-      descTxt.x = 240
+      descTxt.x = 160
       descTxt.y = 70
       c.addChild(descTxt)
     }
@@ -307,8 +306,8 @@ export class CombatScene extends Container {
   _onWaveCleared(waveNum) {
     const msg = new Text({ text: `Wave ${waveNum} cleared!`, style: { fill: 0x22C55E, fontSize: 20 } })
     msg.anchor.set(0.5)
-    msg.x = 400
-    msg.y = 530
+    msg.x = 225
+    msg.y = 560
     this.addChild(msg)
     setTimeout(() => { if (msg.parent) msg.parent.removeChild(msg) }, 2000)
   }
@@ -409,12 +408,12 @@ export class CombatScene extends Container {
 
   _showRoomClearedMsg() {
     const msg = new Text({
-      text: 'Room Cleared! Walk to a door to continue',
+      text: 'Room Cleared! Walk to a door',
       style: { fill: 0x22C55E, fontSize: 16 },
     })
     msg.anchor.set(0.5)
-    msg.x = 400
-    msg.y = 555
+    msg.x = 225
+    msg.y = 560
     this.addChild(msg)
   }
 

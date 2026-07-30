@@ -21,21 +21,21 @@ export class ChestScene extends Container {
     this._cards = []
 
     const bg = new Graphics()
-    bg.rect(0, 0, 800, 600).fill(0x111827)
+    bg.rect(0, 0, 450, 800).fill(0x111827)
     this.addChild(bg)
 
     const title = new Text({
       text: 'CHEST ROOM — Pick an Item',
-      style: { fill: 0xF59E0B, fontSize: 28 },
+      style: { fill: 0xF59E0B, fontSize: 22 },
     })
     title.anchor.set(0.5)
-    title.x = 400
-    title.y = 100
+    title.x = 225
+    title.y = 80
     this.addChild(title)
 
     const goldText = new Text({
       text: `Gold: ${runState.goldEarned}`,
-      style: { fill: 0xF59E0B, fontSize: 18 },
+      style: { fill: 0xF59E0B, fontSize: 16 },
     })
     goldText.x = 20
     goldText.y = 20
@@ -44,11 +44,11 @@ export class ChestScene extends Container {
     // Use the run's persistent upgrade system so already-picked items are excluded
     const sys = runState._upgradeSystem ?? new UpgradeSystem({})
     const items = sys.pickRandomItems(3)
-    const totalW = items.length * 180 + (items.length - 1) * 30
-    const startX = (800 - totalW) / 2
+    const totalW = items.length * 130 + (items.length - 1) * 15
+    const startX = (450 - totalW) / 2
 
     items.forEach((item, i) => {
-      const card = new UpgradeCard(item, startX + i * 210, 200, (key) => this._pickItem(key))
+      const card = new UpgradeCard(item, startX + i * 145, 130, (key) => this._pickItem(key))
       this._cards.push(card)
       this.addChild(card)
     })
@@ -80,18 +80,18 @@ export class ChestScene extends Container {
 
     const prompt = new Text({
       text: 'Choose your next room:',
-      style: { fill: 0x9CA3AF, fontSize: 20 },
+      style: { fill: 0x9CA3AF, fontSize: 18 },
     })
     prompt.anchor.set(0.5)
-    prompt.x = 400
-    prompt.y = 390
+    prompt.x = 225
+    prompt.y = 480
     this.addChild(prompt)
 
     const totalW = connections.length * 160 + (connections.length - 1) * 20
-    const startX = (800 - totalW) / 2
+    const startX = (450 - totalW) / 2
 
     connections.forEach((node, i) => {
-      const btn = this._makeExitBtn(node, startX + i * 180, 430)
+      const btn = this._makeExitBtn(node, startX + i * 180, 520)
       this.addChild(btn)
     })
   }

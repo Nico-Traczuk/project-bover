@@ -29,45 +29,45 @@ export class MetaUpgradeScene extends Container {
 
   _build() {
     const bg = new Graphics()
-    bg.rect(0, 0, 800, 600).fill(0x0f172a)
+    bg.rect(0, 0, 450, 800).fill(0x0f172a)
     this.addChild(bg)
 
-    const title = new Text({ text: 'META UPGRADES', style: { fill: 0xffffff, fontSize: 28 } })
+    const title = new Text({ text: 'META UPGRADES', style: { fill: 0xffffff, fontSize: 24 } })
     title.anchor.set(0.5)
-    title.x = 400
+    title.x = 225
     title.y = 30
     this.addChild(title)
 
     this._goldText = new Text({
       text: `Gold: ${authState.player?.gold ?? 0}`,
-      style: { fill: 0xF59E0B, fontSize: 18 },
+      style: { fill: 0xF59E0B, fontSize: 16 },
     })
     this._goldText.x = 20
-    this._goldText.y = 60
+    this._goldText.y = 58
     this.addChild(this._goldText)
 
     this._errorText = new Text({ text: '', style: { fill: 0xEF4444, fontSize: 14 } })
     this._errorText.x = 20
-    this._errorText.y = 570
+    this._errorText.y = 750
     this.addChild(this._errorText)
 
     this._upgradeListContainer = new Container()
-    this._upgradeListContainer.y = 90
+    this._upgradeListContainer.y = 84
     this.addChild(this._upgradeListContainer)
 
     this._renderUpgrades()
 
     const playBtn = new Container()
     const pb = new Graphics()
-    pb.rect(0, 0, 160, 40).fill(0x059669)
+    pb.rect(0, 0, 200, 44).fill(0x059669)
     playBtn.addChild(pb)
     const pt = new Text({ text: 'PLAY AGAIN', style: { fill: 0xffffff, fontSize: 16 } })
     pt.anchor.set(0.5)
-    pt.x = 80
-    pt.y = 20
+    pt.x = 100
+    pt.y = 22
     playBtn.addChild(pt)
-    playBtn.x = 320
-    playBtn.y = 545
+    playBtn.x = 125
+    playBtn.y = 760
     playBtn.eventMode = 'static'
     playBtn.cursor = 'pointer'
     playBtn.on('pointerup', () => {
@@ -81,14 +81,14 @@ export class MetaUpgradeScene extends Container {
     this._upgradeListContainer.removeChildren()
 
     const owned = new Set(authState.player?.meta_upgrades || [])
-    const cols = 3
-    const cardW = 230
-    const cardH = 80
+    const cols = 2
+    const cardW = 210
+    const cardH = 88
 
     META_UPGRADES.forEach((upg, i) => {
       const col = i % cols
       const row = Math.floor(i / cols)
-      const x = 20 + col * (cardW + 10)
+      const x = 15 + col * (cardW + 10)
       const y = row * (cardH + 8)
 
       const isPurchased = owned.has(upg.key)
@@ -117,13 +117,13 @@ export class MetaUpgradeScene extends Container {
         c.addChild(costText)
 
         const buyBtn = new Graphics()
-        buyBtn.rect(cardW - 60, cardH - 26, 52, 20).fill(0x2563EB)
+        buyBtn.rect(cardW - 58, cardH - 28, 52, 22).fill(0x2563EB)
         c.addChild(buyBtn)
 
         const buyT = new Text({ text: 'BUY', style: { fill: 0xffffff, fontSize: 12 } })
         buyT.anchor.set(0.5)
-        buyT.x = cardW - 34
-        buyT.y = cardH - 16
+        buyT.x = cardW - 32
+        buyT.y = cardH - 17
         c.addChild(buyT)
 
         c.eventMode = 'static'

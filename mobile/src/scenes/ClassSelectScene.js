@@ -12,8 +12,8 @@ const CHAR_FRAMES = {
 
 const STAT_ICONS = { HP: '♥', SPD: '⚡', DEF: '🛡', DMG: '⚔' }
 
-const CARD_W = 210
-const CARD_H = 290
+const CARD_W = 200
+const CARD_H = 360
 const CORNER = 12
 
 function makeClassCard(classKey, classDef, x, y, onClick) {
@@ -62,28 +62,28 @@ function makeClassCard(classKey, classDef, x, y, onClick) {
   }
 
   // Class name
-  const nameText = new Text({ text: classDef.name.toUpperCase(), style: { fill: 0xFFFFFF, fontSize: 20, fontWeight: 'bold' } })
+  const nameText = new Text({ text: classDef.name.toUpperCase(), style: { fill: 0xFFFFFF, fontSize: 18, fontWeight: 'bold' } })
   nameText.anchor.set(0.5)
   nameText.x = CARD_W / 2
-  nameText.y = 100
+  nameText.y = 108
   c.addChild(nameText)
 
   // Attack type badge
   const badgeColor = classDef.attackType === 'ranged' ? 0x4F46E5 : 0x7C3AED
   const badge = new Graphics()
-  badge.rect(CARD_W / 2 - 36, 114, 72, 18).fill(badgeColor)
+  badge.rect(CARD_W / 2 - 38, 122, 76, 20).fill(badgeColor)
   c.addChild(badge)
   const badgeText = new Text({ text: classDef.attackType.toUpperCase(), style: { fill: 0xC4B5FD, fontSize: 11, fontWeight: 'bold' } })
   badgeText.anchor.set(0.5)
   badgeText.x = CARD_W / 2
-  badgeText.y = 123
+  badgeText.y = 132
   c.addChild(badgeText)
 
   // Divider
   const divTex = Assets.get('ui_divider')
   if (divTex) {
     const div = new Sprite(divTex)
-    div.x = 14; div.y = 140; div.width = CARD_W - 28; div.height = 8; div.tint = 0xC8A857
+    div.x = 14; div.y = 152; div.width = CARD_W - 28; div.height = 8; div.tint = 0xC8A857
     c.addChild(div)
   }
 
@@ -97,8 +97,8 @@ function makeClassCard(classKey, classDef, x, y, onClick) {
   stats.forEach(({ label, value, color }, i) => {
     const row = Math.floor(i / 2)
     const col = i % 2
-    const sx = 18 + col * 100
-    const sy = 156 + row * 26
+    const sx = 18 + col * 96
+    const sy = 170 + row * 30
 
     const lbl = new Text({ text: `${STAT_ICONS[label]} ${label}`, style: { fill: 0x94A3B8, fontSize: 12 } })
     lbl.x = sx; lbl.y = sy
@@ -141,15 +141,15 @@ export class ClassSelectScene extends Container {
     super()
 
     const bg = new Graphics()
-    bg.rect(0, 0, 800, 600).fill(0x0f172a)
+    bg.rect(0, 0, 450, 800).fill(0x0f172a)
     this.addChild(bg)
 
     // Decorative lines
     const topLine = new Graphics()
-    topLine.rect(0, 72, 800, 2).fill({ color: 0xC8A857, alpha: 0.3 })
+    topLine.rect(0, 72, 450, 2).fill({ color: 0xC8A857, alpha: 0.3 })
     this.addChild(topLine)
     const botLine = new Graphics()
-    botLine.rect(0, 526, 800, 2).fill({ color: 0xC8A857, alpha: 0.3 })
+    botLine.rect(0, 726, 450, 2).fill({ color: 0xC8A857, alpha: 0.3 })
     this.addChild(botLine)
 
     // Title panel
@@ -157,17 +157,17 @@ export class ClassSelectScene extends Container {
     const borderTex = Assets.get('ui_panel_border')
     if (fillTex) {
       const tf = new NineSliceSprite({ texture: fillTex, leftWidth: 12, topHeight: 12, rightWidth: 12, bottomHeight: 12 })
-      tf.width = 420; tf.height = 60; tf.x = 190; tf.y = 26; tf.tint = 0x080e1a
+      tf.width = 400; tf.height = 60; tf.x = 25; tf.y = 26; tf.tint = 0x080e1a
       this.addChild(tf)
     }
     if (borderTex) {
       const tb = new NineSliceSprite({ texture: borderTex, leftWidth: 12, topHeight: 12, rightWidth: 12, bottomHeight: 12 })
-      tb.width = 420; tb.height = 60; tb.x = 190; tb.y = 26; tb.tint = 0xC8A857
+      tb.width = 400; tb.height = 60; tb.x = 25; tb.y = 26; tb.tint = 0xC8A857
       this.addChild(tb)
     }
-    const title = new Text({ text: 'Choose Your Class', style: { fill: 0xFFFFFF, fontSize: 28, fontWeight: 'bold' } })
+    const title = new Text({ text: 'Choose Your Class', style: { fill: 0xFFFFFF, fontSize: 24, fontWeight: 'bold' } })
     title.anchor.set(0.5)
-    title.x = 400
+    title.x = 225
     title.y = 56
     this.addChild(title)
 
@@ -181,21 +181,21 @@ export class ClassSelectScene extends Container {
       this.addChild(gold)
     }
 
-    // Class cards
+    // Class cards — 2 side by side: 2×200 + 20 gap = 420, startX=15
     const classKeys = Object.keys(CLASSES)
-    const totalW = classKeys.length * CARD_W + (classKeys.length - 1) * 30
-    const startX = (800 - totalW) / 2
+    const totalW = classKeys.length * CARD_W + (classKeys.length - 1) * 20
+    const startX = (450 - totalW) / 2
 
     classKeys.forEach((key, i) => {
       const classDef = CLASSES[key]
-      const cardX = startX + i * (CARD_W + 30)
-      const card = makeClassCard(key, classDef, cardX, 140, () => this._selectClass(key))
+      const cardX = startX + i * (CARD_W + 20)
+      const card = makeClassCard(key, classDef, cardX, 108, () => this._selectClass(key))
       this.addChild(card)
     })
 
     const backBtn = new Text({ text: '← Back', style: { fill: 0x6B7280, fontSize: 15 } })
     backBtn.x = 20
-    backBtn.y = 548
+    backBtn.y = 748
     backBtn.eventMode = 'static'
     backBtn.cursor = 'pointer'
     backBtn.on('pointerup', () => {

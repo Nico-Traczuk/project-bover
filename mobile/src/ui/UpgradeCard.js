@@ -1,14 +1,13 @@
 import { Container, Graphics, Sprite, Text, NineSliceSprite, Assets } from 'pixi.js'
 
-const CORNER = 12
-const CARD_W = 180
+const CORNER = 10
+const CARD_W = 130
 const CARD_H = 240
 
 export class UpgradeCard extends Container {
   constructor(item, x, y, onClick) {
     super()
 
-    // Dark fill background
     const panelFillTex = Assets.get('ui_panel_fill')
     if (panelFillTex) {
       const fill = new NineSliceSprite({
@@ -26,7 +25,6 @@ export class UpgradeCard extends Container {
       this.addChild(bg)
     }
 
-    // Gold fantasy border overlay
     const panelBorderTex = Assets.get('ui_panel_border')
     if (panelBorderTex) {
       const border = new NineSliceSprite({
@@ -42,55 +40,53 @@ export class UpgradeCard extends Container {
 
     const label = new Text({
       text: item.label,
-      style: { fill: 0xFFFFFF, fontSize: 16, fontWeight: 'bold', wordWrap: true, wordWrapWidth: 156 },
+      style: { fill: 0xFFFFFF, fontSize: 13, fontWeight: 'bold', wordWrap: true, wordWrapWidth: 106 },
     })
-    label.x = 14
-    label.y = 16
+    label.x = 12
+    label.y = 12
     this.addChild(label)
 
     const desc = new Text({
       text: item.description,
-      style: { fill: 0xCBD5E1, fontSize: 13, wordWrap: true, wordWrapWidth: 152 },
+      style: { fill: 0xCBD5E1, fontSize: 11, wordWrap: true, wordWrapWidth: 106 },
     })
-    desc.x = 14
-    desc.y = 52
+    desc.x = 12
+    desc.y = 44
     this.addChild(desc)
 
-    // Divider before button
     const dividerTex = Assets.get('ui_divider')
     if (dividerTex) {
       const div = new Sprite(dividerTex)
-      div.x = 14
-      div.y = 174
-      div.width = 152
-      div.height = 10
+      div.x = 12
+      div.y = 178
+      div.width = 106
+      div.height = 8
       div.tint = 0xC8A857
       this.addChild(div)
     }
 
-    // Pick button
-    const btnBorderTex = Assets.get('ui_panel_fill')
-    if (btnBorderTex) {
+    const btnFillTex = Assets.get('ui_panel_fill')
+    if (btnFillTex) {
       const btn = new NineSliceSprite({
-        texture: btnBorderTex,
+        texture: btnFillTex,
         leftWidth: 8, topHeight: 8, rightWidth: 8, bottomHeight: 8,
       })
-      btn.width = 140
+      btn.width = 106
       btn.height = 44
-      btn.x = 20
-      btn.y = 185
+      btn.x = 12
+      btn.y = 188
       btn.tint = 0x1D4ED8
       this.addChild(btn)
     } else {
       const btn = new Graphics()
-      btn.rect(20, 185, 140, 44).fill(0x2563EB)
+      btn.rect(12, 188, 106, 44).fill(0x2563EB)
       this.addChild(btn)
     }
 
     const btnText = new Text({ text: 'PICK', style: { fill: 0xffffff, fontSize: 14 } })
     btnText.anchor.set(0.5)
-    btnText.x = 90
-    btnText.y = 207
+    btnText.x = 65
+    btnText.y = 210
     this.addChild(btnText)
 
     this.x = x
