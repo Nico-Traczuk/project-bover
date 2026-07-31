@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite, Texture, Rectangle, Assets } from 'pixi.js'
+
 import { CLASSES } from '../../data/classes.js'
 
 const CHAR_FRAMES = {
@@ -32,7 +33,6 @@ export class BasePlayer extends Container {
     this._animState = 'idle'
     this._animTimer = 0
     this._facing = 1
-    this._walkFrame = 0
     this._walkTimer = 0
     this._knockbackOffsetX = 0
     this._knockbackOffsetY = 0
@@ -42,14 +42,11 @@ export class BasePlayer extends Container {
     const charTex = Assets.get('characters')
     if (charTex) {
       const { row } = CHAR_FRAMES[classKey] ?? { row: 0 }
-      this._walkFrames = [0, 1, 2].map(c =>
-        new Texture({ source: charTex.source, frame: new Rectangle(c * 17, row * 17, 16, 16) })
-      )
-      this._gfx = new Sprite(this._walkFrames[0])
+      const tex = new Texture({ source: charTex.source, frame: new Rectangle(0, row * 17, 16, 16) })
+      this._gfx = new Sprite(tex)
       this._gfx.anchor.set(0.5)
       this._gfx.scale.set(BASE_SCALE)
     } else {
-      this._walkFrames = null
       this._gfx = new Graphics()
       this._gfx.rect(-16, -24, 32, 32).fill(def.color)
     }
@@ -102,19 +99,10 @@ export class BasePlayer extends Container {
     if (moveX < 0) this._facing = -1
     else if (moveX > 0) this._facing = 1
 
-    if (this._walkFrames) {
-      if (moving && this._animState !== 'hurt') {
-        this._walkTimer += dt
-        if (this._walkTimer >= 0.15) {
-          this._walkTimer = 0
-          this._walkFrame = (this._walkFrame + 1) % 3
-          this._gfx.texture = this._walkFrames[this._walkFrame]
-        }
-      } else {
-        this._walkTimer = 0
-        this._walkFrame = 0
-        this._gfx.texture = this._walkFrames[0]
-      }
+    if (moving && this._animState !== 'hurt') {
+      this._walkTimer += dt
+    } else {
+      this._walkTimer = 0
     }
 
     if (this._animTimer > 0) {
@@ -145,8 +133,9 @@ export class BasePlayer extends Container {
     this._knockbackOffsetY *= Math.max(0, 1 - dt * 12)
     if (Math.abs(this._knockbackOffsetX) < 0.1) this._knockbackOffsetX = 0
     if (Math.abs(this._knockbackOffsetY) < 0.1) this._knockbackOffsetY = 0
+    const walkBob = moving ? Math.sin(this._walkTimer * Math.PI * 8) * 2 : 0
     this._gfx.x = this._knockbackOffsetX
-    this._gfx.y = this._knockbackOffsetY
+    this._gfx.y = this._knockbackOffsetY + walkBob
   }
 
   tick(deltaSeconds) {
