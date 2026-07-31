@@ -3,6 +3,8 @@ import { BasePlayer } from './BasePlayer.js'
 export class Tank extends BasePlayer {
   constructor(metaUpgrades = []) {
     super('tank', metaUpgrades)
+    this._attackScaleX = 1.5
+    this._attackScaleY = 1.2
   }
 
   getAttackData(targetAngle) {
