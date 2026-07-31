@@ -2,8 +2,10 @@ import { Container, Graphics, Sprite, Texture, Rectangle, Assets } from 'pixi.js
 import { ENEMY_TYPES, difficultyMultiplier, speedMultiplier } from '../../data/enemies.js'
 
 const ENEMY_FRAMES = {
-  goblin: { col: 0, row: 7 },
+  goblin: { row: 7 },
 }
+
+const BASE_SCALE = 2
 
 export class BaseEnemy extends Container {
   constructor(typeKey, depth = 1) {
@@ -16,13 +18,9 @@ export class BaseEnemy extends Container {
 
     this.stats = {
       typeKey,
-      hp: Math.round(def.hp * dm),
-      maxHp: Math.round(def.hp * dm),
-      speed: Math.round(def.speed * sm),
-      damage: Math.round(def.damage * dm),
-      xpReward: def.xpReward,
-      goldMin: def.goldMin,
-      goldMax: def.goldMax,
+      hp: Math.round(def.hp * dm), maxHp: Math.round(def.hp * dm),
+      speed: Math.round(def.speed * sm), damage: Math.round(def.damage * dm),
+      xpReward: def.xpReward, goldMin: def.goldMin, goldMax: def.goldMax,
     }
 
     this.behavior = def.behavior
@@ -30,47 +28,78 @@ export class BaseEnemy extends Container {
     this.stunTimer = 0
     this._slowTimer = 0
 
+    // Animation state
+    this._animState = 'idle'
+    this._animTimer = 0
+    this._facing = 1
+    this._walkFrame = 0
+    this._walkTimer = 0
+    this._knockbackOffsetX = 0
+    this._knockbackOffsetY = 0
+    this._lastMoveX = 0
+    this._lastMoveY = 0
+
+    // Death animation
+    this._dying = false
+    this._dyingTimer = 0
+
     const charTex = Assets.get('characters')
     if (charTex) {
-      const { col, row } = ENEMY_FRAMES[typeKey] ?? { col: 0, row: 7 }
-      const tex = new Texture({
-        source: charTex.source,
-        frame: new Rectangle(col * 17, row * 17, 16, 16),
-      })
-      this._gfx = new Sprite(tex)
+      const { row } = ENEMY_FRAMES[typeKey] ?? { row: 7 }
+      this._walkFrames = [0, 1, 2].map(c =>
+        new Texture({ source: charTex.source, frame: new Rectangle(c * 17, row * 17, 16, 16) })
+      )
+      this._gfx = new Sprite(this._walkFrames[0])
       this._gfx.anchor.set(0.5)
-      this._gfx.scale.set(2)
+      this._gfx.scale.set(BASE_SCALE)
     } else {
+      this._walkFrames = null
       this._gfx = new Graphics()
       this._gfx.rect(-def.size / 2, -def.size / 2, def.size, def.size).fill(def.color)
     }
     this.addChild(this._gfx)
   }
 
-  isAlive() {
-    return this.stats.hp > 0
-  }
+  isAlive() { return this.stats.hp > 0 }
 
-  takeDamage(amount) {
+  takeDamage(amount, knockbackAngle = null) {
     this.stats.hp = Math.max(0, this.stats.hp - amount)
+    this._animState = 'hurt'
+    this._animTimer = 0.20
+    this._gfx.tint = 0xFF6666
+    if (knockbackAngle != null) {
+      this._knockbackOffsetX = Math.cos(knockbackAngle) * 14
+      this._knockbackOffsetY = Math.sin(knockbackAngle) * 14
+    }
   }
 
-  stun(duration) {
-    this.stunTimer = Math.max(this.stunTimer, duration)
+  stun(duration) { this.stunTimer = Math.max(this.stunTimer, duration) }
+  slow(duration) { this._slowTimer = Math.max(this._slowTimer, duration) }
+
+  triggerDeath() {
+    this._dying = true
+    this._dyingTimer = 0.35
   }
 
-  slow(duration) {
-    this._slowTimer = Math.max(this._slowTimer, duration)
+  tickDeath(dt) {
+    this._dyingTimer -= dt
+    const progress = Math.max(0, this._dyingTimer / 0.35)
+    this.rotation += (Math.PI * 2 / 0.35) * dt
+    const s = BASE_SCALE * progress
+    this._gfx.scale.set(Math.max(0, s))
+    this.alpha = progress
   }
 
   tick(deltaSeconds, playerX, playerY) {
     if (this.stunTimer > 0) {
       this.stunTimer -= deltaSeconds
+      this._animateTick(deltaSeconds, 0, 0)
       return
     }
     if (this._slowTimer > 0) this._slowTimer -= deltaSeconds
     if (this.attackCooldown > 0) this.attackCooldown -= deltaSeconds
     this._behaviorTick(deltaSeconds, playerX, playerY)
+    this._animateTick(deltaSeconds, this._lastMoveX, this._lastMoveY)
   }
 
   _behaviorTick(deltaSeconds, playerX, playerY) {
@@ -84,14 +113,63 @@ export class BaseEnemy extends Container {
       const dy = playerY - this.y
       const dist = Math.sqrt(dx * dx + dy * dy)
       if (dist > 2) {
-        this.x += (dx / dist) * speed * deltaSeconds
-        this.y += (dy / dist) * speed * deltaSeconds
+        this._lastMoveX = dx / dist
+        this._lastMoveY = dy / dist
+        this.x += this._lastMoveX * speed * deltaSeconds
+        this.y += this._lastMoveY * speed * deltaSeconds
+      } else {
+        this._lastMoveX = 0
+        this._lastMoveY = 0
       }
+    } else {
+      this._lastMoveX = 0
+      this._lastMoveY = 0
     }
-    // ranged_stationary: no movement
   }
 
-  // Returns attack data if ready to attack, null otherwise
+  _animateTick(dt, moveX, moveY) {
+    const moving = Math.abs(moveX) + Math.abs(moveY) > 0.01
+
+    if (moveX < 0) this._facing = -1
+    else if (moveX > 0) this._facing = 1
+
+    if (this._walkFrames) {
+      if (moving && this._animState !== 'hurt') {
+        this._walkTimer += dt
+        if (this._walkTimer >= 0.15) {
+          this._walkTimer = 0
+          this._walkFrame = (this._walkFrame + 1) % 3
+          this._gfx.texture = this._walkFrames[this._walkFrame]
+        }
+      } else {
+        this._walkTimer = 0
+        this._walkFrame = 0
+        this._gfx.texture = this._walkFrames[0]
+      }
+    }
+
+    if (this._animTimer > 0) {
+      this._animTimer -= dt
+      if (this._animTimer <= 0) {
+        this._animTimer = 0
+        this._animState = moving ? 'walk' : 'idle'
+        this._gfx.tint = 0xFFFFFF
+      }
+    } else {
+      this._animState = moving ? 'walk' : 'idle'
+    }
+
+    this._gfx.scale.x = this._facing * BASE_SCALE
+    this._gfx.scale.y = BASE_SCALE
+
+    this._knockbackOffsetX *= Math.max(0, 1 - dt * 12)
+    this._knockbackOffsetY *= Math.max(0, 1 - dt * 12)
+    if (Math.abs(this._knockbackOffsetX) < 0.1) this._knockbackOffsetX = 0
+    if (Math.abs(this._knockbackOffsetY) < 0.1) this._knockbackOffsetY = 0
+    this._gfx.x = this._knockbackOffsetX
+    this._gfx.y = this._knockbackOffsetY
+  }
+
   getAttack(playerX, playerY) {
     if (this.attackCooldown > 0 || this.stunTimer > 0) return null
     const dx = playerX - this.x
@@ -104,13 +182,10 @@ export class BaseEnemy extends Container {
     this.attackCooldown = 1.5
     const angle = Math.atan2(dy, dx)
     return {
-      x: this.x,
-      y: this.y,
-      angle,
+      x: this.x, y: this.y, angle,
       damage: this.stats.damage,
       speed: isRanged ? 180 : 0,
-      color: 0xFF4444,
-      radius: 5,
+      color: 0xFF4444, radius: 5,
       isEnemyProjectile: true,
       isMelee: !isRanged,
     }
