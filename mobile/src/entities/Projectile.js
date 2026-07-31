@@ -6,12 +6,15 @@ export class Projectile extends Container {
     Object.assign(this, extras)
     this.damage = damage
     this.speed = speed
+    this.color = color
     this.isMelee = isMelee
     this.isEnemyProjectile = isEnemyProjectile
     this.vx = Math.cos(angle) * speed
     this.vy = Math.sin(angle) * speed
     this.radius = radius
     this.lifetime = isMelee ? 0.12 : 4.0
+    this.rotationSpeed = isEnemyProjectile ? -3 : 4
+    this._trail = []
 
     this.x = x
     this.y = y
@@ -26,9 +29,13 @@ export class Projectile extends Container {
   }
 
   tick(deltaSeconds) {
+    this._trail.unshift({ x: this.x, y: this.y })
+    if (this._trail.length > 6) this._trail.length = 6
+
     this.x += this.vx * deltaSeconds
     this.y += this.vy * deltaSeconds
     this.lifetime -= deltaSeconds
+    this.rotation += this.rotationSpeed * deltaSeconds
   }
 
   isExpired() {
