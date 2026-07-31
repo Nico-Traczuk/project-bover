@@ -47,6 +47,8 @@ export class CombatScene extends Container {
     this._tickerFn = null
     this._roomCleared = false
     this._doors = []
+    this._shakeTimer = 0
+    this._shakeIntensity = 5
 
     const { name, modifier, theme } = getRoomData(node)
     this._modifier = modifier
@@ -101,6 +103,8 @@ export class CombatScene extends Container {
     this._player.x = ARENA.w / 2
     this._player.y = ARENA.h / 2
     this._stage.addChild(this._player)
+    this._trailGfx = new Graphics()
+    this._stage.addChild(this._trailGfx)
 
     // Top HUD panel — full width, 76px tall
     const hudPanelTex = Assets.get('ui_panel_fill')
@@ -169,6 +173,7 @@ export class CombatScene extends Container {
       onWaveCleared: (wave) => this._onWaveCleared(wave),
       onRoomCleared: () => this._onRoomCleared(),
       onPlayerDeath: () => this._onPlayerDeath(),
+      onPlayerHurt: () => this._onPlayerHurt(),
       onGoldEarned: (g) => this._onGoldEarned(g),
       onXpEarned: (xp) => this._onXpEarned(xp),
     })
@@ -181,12 +186,38 @@ export class CombatScene extends Container {
     this._tickerFn = (ticker) => {
       if (this._paused) return
       const dt = ticker.deltaMS / 1000
+
       this._updatePlayer(dt)
+
+      // Trail rendering
+      this._trailGfx.clear()
+      this._combatSystem.projectiles.forEach(p => {
+        p._trail.forEach((pos, i) => {
+          const alpha = ((6 - i) / 6) * 0.25
+          const r = Math.max(0.5, p.radius * ((6 - i) / 6) * 0.6)
+          this._trailGfx.circle(pos.x, pos.y, r).fill({ color: p.color, alpha })
+        })
+      })
+
       if (this._roomCleared) {
         this._checkDoorCollisions(this._player.x, this._player.y)
       } else {
         this._combatSystem.tick(dt, this._player.x, this._player.y, this._getAimAngle())
       }
+
+      // Screen shake
+      if (this._shakeTimer > 0) {
+        this._shakeTimer -= dt
+        const t = Math.max(0, this._shakeTimer / 0.3)
+        const mag = this._shakeIntensity * t
+        this._stage.x = ARENA.x + (Math.random() * 2 - 1) * mag
+        this._stage.y = ARENA.y + (Math.random() * 2 - 1) * mag
+        if (this._shakeTimer <= 0) {
+          this._stage.x = ARENA.x
+          this._stage.y = ARENA.y
+        }
+      }
+
       this._healthBar.update(this._player.stats.hp, this._player.stats.maxHp)
       this._goldDisplay.update(runState.goldEarned)
       this._drawJoystick()
@@ -208,6 +239,7 @@ export class CombatScene extends Container {
     const speed = this._player.stats.speed
     this._player.x = Math.max(16, Math.min(ARENA.w - 16, this._player.x + move.x * speed * dt))
     this._player.y = Math.max(24, Math.min(ARENA.h - 16, this._player.y + move.y * speed * dt))
+    this._player.animateTick(dt, move.x, move.y)
   }
 
   _getAimAngle() {
@@ -244,6 +276,10 @@ export class CombatScene extends Container {
       this._showUpgradeOverlay()
     }
     this._xpBar.update(this._xp, this._xpToNext)
+  }
+
+  _onPlayerHurt() {
+    this._shakeTimer = 0.3
   }
 
   _showUpgradeOverlay() {
@@ -419,8 +455,13 @@ export class CombatScene extends Container {
 
   _onPlayerDeath() {
     this._stopTicker()
-    import('./GameOverScene.js').then(({ GameOverScene }) => sceneManager.go(new GameOverScene()))
-      .catch(err => console.error('Failed to load GameOverScene:', err))
+    const flash = new Graphics()
+    flash.rect(0, 0, 450, 800).fill({ color: 0xFFFFFF, alpha: 0.6 })
+    this.addChild(flash)
+    setTimeout(() => {
+      import('./GameOverScene.js').then(({ GameOverScene }) => sceneManager.go(new GameOverScene()))
+        .catch(err => console.error('Failed to load GameOverScene:', err))
+    }, 400)
   }
 
   _stopTicker() {
