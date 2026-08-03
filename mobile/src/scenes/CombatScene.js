@@ -1,4 +1,5 @@
 import { Container, Graphics, Text, NineSliceSprite, Assets } from 'pixi.js'
+import { VFXLayer } from '../vfx/VFXLayer.js'
 import { sceneManager } from '../core/SceneManager.js'
 import { runState } from '../core/RunState.js'
 import { authState } from '../core/AuthState.js'
@@ -105,6 +106,8 @@ export class CombatScene extends Container {
     this._stage.addChild(this._player)
     this._trailGfx = new Graphics()
     this._stage.addChild(this._trailGfx)
+    this._vfx = new VFXLayer()
+    this._stage.addChild(this._vfx)
 
     // Top HUD panel — full width, 76px tall
     const hudPanelTex = Assets.get('ui_panel_fill')
@@ -176,6 +179,7 @@ export class CombatScene extends Container {
       onPlayerHurt: () => this._onPlayerHurt(),
       onGoldEarned: (g) => this._onGoldEarned(g),
       onXpEarned: (xp) => this._onXpEarned(xp),
+      onEffect: (type, x, y, value) => this._vfx.spawn(type, x, y, value),
     })
 
     this._startTicker()
@@ -193,11 +197,13 @@ export class CombatScene extends Container {
       this._trailGfx.clear()
       this._combatSystem.projectiles.forEach(p => {
         p._trail.forEach((pos, i) => {
-          const alpha = ((6 - i) / 6) * 0.25
-          const r = Math.max(0.5, p.radius * ((6 - i) / 6) * 0.6)
+          const frac = (6 - i) / 6
+          const alpha = frac * frac * 0.6
+          const r = Math.max(0.5, p.radius * frac * 0.7)
           this._trailGfx.circle(pos.x, pos.y, r).fill({ color: p.color, alpha })
         })
       })
+      this._vfx.tick(dt)
 
       if (this._roomCleared) {
         this._checkDoorCollisions(this._player.x, this._player.y)
@@ -273,6 +279,7 @@ export class CombatScene extends Container {
       this._level++
       this._xpToNext = xpForLevel(this._level)
       this._levelText.text = `Level ${this._level}`
+      this._vfx?.spawn('levelup', this._player.x, this._player.y, null)
       this._showUpgradeOverlay()
     }
     this._xpBar.update(this._xp, this._xpToNext)
