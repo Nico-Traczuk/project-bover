@@ -106,8 +106,6 @@ export class CombatScene extends Container {
     this._stage.addChild(this._player)
     this._trailGfx = new Graphics()
     this._stage.addChild(this._trailGfx)
-    this._vfx = new VFXLayer()
-    this._stage.addChild(this._vfx)
 
     // Top HUD panel — full width, 76px tall
     const hudPanelTex = Assets.get('ui_panel_fill')
@@ -179,8 +177,14 @@ export class CombatScene extends Container {
       onPlayerHurt: () => this._onPlayerHurt(),
       onGoldEarned: (g) => this._onGoldEarned(g),
       onXpEarned: (xp) => this._onXpEarned(xp),
-      onEffect: (type, x, y, value) => this._vfx.spawn(type, x, y, value),
+      onEffect: (type, x, y, value) => {
+        const vy = type === 'damage' ? ARENA.y + y - 28 : ARENA.y + y
+        this._vfx.spawn(type, ARENA.x + x, vy, value)
+      },
     })
+
+    this._vfx = new VFXLayer()
+    this.addChild(this._vfx)
 
     this._startTicker()
   }
@@ -279,7 +283,7 @@ export class CombatScene extends Container {
       this._level++
       this._xpToNext = xpForLevel(this._level)
       this._levelText.text = `Level ${this._level}`
-      this._vfx?.spawn('levelup', this._player.x, this._player.y, null)
+      this._vfx?.spawn('levelup', ARENA.x + this._player.x, ARENA.y + this._player.y, null)
       this._showUpgradeOverlay()
     }
     this._xpBar.update(this._xp, this._xpToNext)
