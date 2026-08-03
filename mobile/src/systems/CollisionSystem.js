@@ -9,9 +9,10 @@ export class CollisionSystem {
   checkProjectilesVsEnemies(projectiles, enemies) {
     const hits = []
     projectiles.forEach(p => {
-      if (p.isEnemyProjectile || p.isMelee) return
+      if (p.isEnemyProjectile) return
       enemies.forEach(e => {
         if (!e.isAlive()) return
+        if (p._hitEnemies?.has(e)) return
         if (circlesOverlap(p.x, p.y, p.radius, e.x, e.y, 16)) {
           hits.push({ projectile: p, enemy: e })
         }

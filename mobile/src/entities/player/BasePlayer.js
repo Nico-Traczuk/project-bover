@@ -4,10 +4,10 @@ import { CLASSES } from '../../data/classes.js'
 
 const CHAR_FRAMES = {
   mage: { row: 0 },
-  tank: { row: 4 },
+  tank: { row: 5 },
 }
 
-const BASE_SCALE = 2
+const BASE_SCALE = 3
 
 export class BasePlayer extends Container {
   constructor(classKey, metaUpgrades = []) {

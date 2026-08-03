@@ -13,6 +13,7 @@ export class Projectile extends Container {
     this.vy = Math.sin(angle) * speed
     this.radius = radius
     this.lifetime = isMelee ? 0.12 : 4.0
+    this._hitEnemies = isMelee ? new Set() : null
     this.rotationSpeed = isEnemyProjectile ? -3 : 4
     this._trail = []
 

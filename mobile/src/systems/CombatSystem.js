@@ -101,6 +101,7 @@ export class CombatSystem {
     pHits.forEach(({ projectile, enemy }) => {
       const hitAngle = Math.atan2(projectile.vy, projectile.vx)
       enemy.takeDamage(projectile.damage, hitAngle)
+      if (projectile._hitEnemies) projectile._hitEnemies.add(enemy)
       if (projectile.frostSlow) enemy.slow(1.5)
       if (!projectile.isMelee) projectile.lifetime = 0
       if (!enemy.isAlive()) {

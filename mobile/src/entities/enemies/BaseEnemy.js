@@ -5,7 +5,7 @@ const ENEMY_FRAMES = {
   goblin: { row: 7 },
 }
 
-const BASE_SCALE = 2
+const BASE_SCALE = 3
 
 export class BaseEnemy extends Container {
   constructor(typeKey, depth = 1) {
