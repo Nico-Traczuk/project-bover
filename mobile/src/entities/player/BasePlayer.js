@@ -34,6 +34,7 @@ export class BasePlayer extends Container {
     this._animTimer = 0
     this._facing = 1
     this._walkTimer = 0
+    this._idleTimer = 0
     this._knockbackOffsetX = 0
     this._knockbackOffsetY = 0
     this._attackScaleX = 1.3
@@ -116,6 +117,12 @@ export class BasePlayer extends Container {
       this._animState = moving ? 'walk' : 'idle'
     }
 
+    if (this._animState === 'idle') {
+      this._idleTimer += dt
+    } else {
+      this._idleTimer = 0
+    }
+
     let sx = 1, sy = 1
     if (this._animState === 'attack') {
       const half = 0.08, full = 0.15
@@ -124,6 +131,8 @@ export class BasePlayer extends Container {
         : this._animTimer / half
       sx = 1 + t * (this._attackScaleX - 1)
       sy = 1 + t * (this._attackScaleY - 1)
+    } else if (this._animState === 'idle') {
+      sy = 1 + Math.sin(this._idleTimer * 1.8) * 0.03
     }
 
     this._gfx.scale.x = this._facing * BASE_SCALE * sx

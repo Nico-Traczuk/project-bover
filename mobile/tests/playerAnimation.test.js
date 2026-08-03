@@ -100,4 +100,26 @@ describe('BasePlayer animation', () => {
     p.animateTick(0.21, 0, 0)
     expect(p._gfx.tint).toBe(0xFFFFFF)
   })
+
+  test('_idleTimer starts at 0', () => {
+    expect(p._idleTimer).toBe(0)
+  })
+
+  test('_idleTimer increments when idle', () => {
+    p.animateTick(0.1, 0, 0)
+    expect(p._idleTimer).toBeGreaterThan(0)
+  })
+
+  test('_idleTimer resets to 0 when moving', () => {
+    p.animateTick(0.1, 0, 0)
+    p.animateTick(0.1, 1, 0)
+    expect(p._idleTimer).toBe(0)
+  })
+
+  test('scale.y deviates from BASE_SCALE while idle', () => {
+    p.animateTick(2.0, 0, 0)
+    const BASE_SCALE = 3
+    const breathe = 1 + Math.sin(p._idleTimer * 1.8) * 0.03
+    expect(p._gfx.scale.y).toBeCloseTo(BASE_SCALE * breathe, 5)
+  })
 })
