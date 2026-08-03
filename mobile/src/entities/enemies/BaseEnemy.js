@@ -37,10 +37,14 @@ export class BaseEnemy extends Container {
     this._knockbackOffsetY = 0
     this._lastMoveX = 0
     this._lastMoveY = 0
+    this._idleTimer = 0
 
     // Death animation
     this._dying = false
     this._dyingTimer = 0
+
+    // Spawn pop-in
+    this._spawnTimer = 0.3
 
     const charTex = Assets.get('characters')
     if (charTex) {
@@ -53,6 +57,7 @@ export class BaseEnemy extends Container {
       this._gfx = new Graphics()
       this._gfx.rect(-def.size / 2, -def.size / 2, def.size, def.size).fill(def.color)
     }
+    this._gfx.scale.set(0)
     this.addChild(this._gfx)
   }
 
@@ -90,12 +95,22 @@ export class BaseEnemy extends Container {
     if (this.stunTimer > 0) {
       this.stunTimer -= deltaSeconds
       this._animateTick(deltaSeconds, 0, 0)
-      return
+    } else {
+      if (this._slowTimer > 0) this._slowTimer -= deltaSeconds
+      if (this.attackCooldown > 0) this.attackCooldown -= deltaSeconds
+      this._behaviorTick(deltaSeconds, playerX, playerY)
+      this._animateTick(deltaSeconds, this._lastMoveX, this._lastMoveY)
     }
-    if (this._slowTimer > 0) this._slowTimer -= deltaSeconds
-    if (this.attackCooldown > 0) this.attackCooldown -= deltaSeconds
-    this._behaviorTick(deltaSeconds, playerX, playerY)
-    this._animateTick(deltaSeconds, this._lastMoveX, this._lastMoveY)
+    if (this._spawnTimer > 0) {
+      this._spawnTimer -= deltaSeconds
+      const t = Math.max(0, 1 - (Math.max(0, this._spawnTimer) / 0.3))
+      const s = t < 0.7
+        ? t / 0.7
+        : 1 + 0.4 * ((t - 0.7) / 0.3) * (1 - (t - 0.7) / 0.3)
+      const scale = BASE_SCALE * Math.max(0, s)
+      this._gfx.scale.x = this._facing * scale
+      this._gfx.scale.y = scale
+    }
   }
 
   _behaviorTick(deltaSeconds, playerX, playerY) {
@@ -146,8 +161,19 @@ export class BaseEnemy extends Container {
       this._animState = moving ? 'walk' : 'idle'
     }
 
+    if (this._animState === 'idle') {
+      this._idleTimer += dt
+    } else {
+      this._idleTimer = 0
+    }
+
+    let sy = 1
+    if (this._animState === 'idle') {
+      sy = 1 + Math.sin(this._idleTimer * 1.8) * 0.03
+    }
+
     this._gfx.scale.x = this._facing * BASE_SCALE
-    this._gfx.scale.y = BASE_SCALE
+    this._gfx.scale.y = BASE_SCALE * sy
 
     this._knockbackOffsetX *= Math.max(0, 1 - dt * 12)
     this._knockbackOffsetY *= Math.max(0, 1 - dt * 12)
