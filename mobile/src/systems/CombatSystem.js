@@ -4,7 +4,7 @@ import { CollisionSystem } from './CollisionSystem.js'
 import { enemiesForDepth, waveCount, enemyCountForWave } from '../data/enemies.js'
 
 export class CombatSystem {
-  constructor({ player, upgradeSystem, depth, stage, modifier, onWaveCleared, onRoomCleared, onPlayerDeath, onGoldEarned, onXpEarned, onPlayerHurt }) {
+  constructor({ player, upgradeSystem, depth, stage, modifier, onWaveCleared, onRoomCleared, onPlayerDeath, onGoldEarned, onXpEarned, onPlayerHurt, onEffect }) {
     this.player = player
     this.upgradeSystem = upgradeSystem
     this.depth = depth
@@ -16,6 +16,7 @@ export class CombatSystem {
     this.onGoldEarned = onGoldEarned
     this.onXpEarned = onXpEarned
     this.onPlayerHurt = onPlayerHurt ?? null
+    this.onEffect = onEffect ?? null
 
     this.enemies = []
     this.dyingEnemies = []
@@ -102,6 +103,8 @@ export class CombatSystem {
       const hitAngle = Math.atan2(projectile.vy, projectile.vx)
       enemy.takeDamage(projectile.damage, hitAngle)
       if (projectile._hitEnemies) projectile._hitEnemies.add(enemy)
+      this.onEffect?.('damage', enemy.x, enemy.y, { amount: projectile.damage, maxHp: enemy.stats.maxHp })
+      this.onEffect?.('impact', enemy.x, enemy.y, null)
       if (projectile.frostSlow) enemy.slow(1.5)
       if (!projectile.isMelee) projectile.lifetime = 0
       if (!enemy.isAlive()) {
@@ -121,6 +124,7 @@ export class CombatSystem {
       const prevHp = this.player.stats.hp
       this.player.takeDamage(p.damage, hitAngle)
       if (this.player.stats.hp < prevHp) this.onPlayerHurt?.()
+      this.onEffect?.('impact', this.player.x, this.player.y, null)
       p.lifetime = 0
     })
 
