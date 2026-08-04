@@ -35,9 +35,9 @@ export class GameOverScene extends Container {
     this.addChild(title)
 
     const stats = [
-      `Depth reached: ${runState.depthReached}`,
-      `Rooms cleared: ${runState.roomsCleared}`,
+      `Wave reached: ${runState.currentWave} / 15`,
       `Gold earned: ${runState.goldEarned}`,
+      runState.castleHp <= 0 ? 'Castle destroyed!' : 'Hero fell in battle',
     ]
     stats.forEach((s, i) => {
       const t = new Text({ text: s, style: { fill: 0x9CA3AF, fontSize: 20 } })
@@ -47,9 +47,9 @@ export class GameOverScene extends Container {
       this.addChild(t)
     })
 
-    this.addChild(makeButton('UPGRADES', 125, 570, 200, 50, 0x7C3AED, () => {
-      import('./MetaUpgradeScene.js').then(({ MetaUpgradeScene }) => sceneManager.go(new MetaUpgradeScene()))
-        .catch(err => console.error('Failed to load MetaUpgradeScene:', err))
+    this.addChild(makeButton('TRY AGAIN', 125, 570, 200, 50, 0x7C3AED, () => {
+      import('./BattlefieldScene.js').then(({ BattlefieldScene }) => sceneManager.go(new BattlefieldScene()))
+        .catch(err => console.error('Failed to load BattlefieldScene:', err))
     }))
   }
 }

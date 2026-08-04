@@ -1,6 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js'
 import { sceneManager } from '../core/SceneManager.js'
 import { runState } from '../core/RunState.js'
+import { TOTAL_WAVES } from '../data/biomes.js'
 
 export class BossVictoryScene extends Container {
   constructor() {
@@ -17,8 +18,9 @@ export class BossVictoryScene extends Container {
     this.addChild(title)
 
     const stats = [
+      `Waves cleared: ${TOTAL_WAVES} / ${TOTAL_WAVES}`,
       `Gold earned: ${runState.goldEarned}`,
-      `Rooms cleared: ${runState.roomsCleared}`,
+      `Castle HP remaining: ${runState.castleHp}`,
     ]
     stats.forEach((s, i) => {
       const t = new Text({ text: s, style: { fill: 0x9CA3AF, fontSize: 20 } })
@@ -42,8 +44,8 @@ export class BossVictoryScene extends Container {
     btn.eventMode = 'static'
     btn.cursor = 'pointer'
     btn.on('pointerup', () => {
-      import('./MetaUpgradeScene.js').then(({ MetaUpgradeScene }) => sceneManager.go(new MetaUpgradeScene()))
-        .catch(err => console.error('Failed to load MetaUpgradeScene:', err))
+      import('./BattlefieldScene.js').then(({ BattlefieldScene }) => sceneManager.go(new BattlefieldScene()))
+        .catch(err => console.error('Failed to load BattlefieldScene:', err))
     })
     this.addChild(btn)
   }

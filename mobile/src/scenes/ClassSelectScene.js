@@ -208,16 +208,8 @@ export class ClassSelectScene extends Container {
   _selectClass(classKey) {
     runState.reset()
     runState.selectedClass = classKey
-
-    Promise.all([
-      import('../systems/MapSystem.js'),
-      import('./CombatScene.js'),
-    ]).then(([{ generateMap }, { CombatScene }]) => {
-      const mapData = generateMap(Date.now())
-      runState._mapData = mapData
-      runState._currentNodeId = mapData.startNodeId
-      const startNode = mapData.nodes.get(mapData.startNodeId)
-      fadeToScene(sceneManager.app, () => sceneManager.go(new CombatScene(startNode)))
-    }).catch(err => console.error('Failed to start run:', err))
+    import('./BiomeSelectScene.js').then(({ BiomeSelectScene }) => {
+      fadeToScene(sceneManager.app, () => sceneManager.go(new BiomeSelectScene()))
+    }).catch(err => console.error('Failed to load BiomeSelectScene:', err))
   }
 }
