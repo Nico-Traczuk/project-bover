@@ -101,7 +101,6 @@ export class BiomeSelectScene extends Container {
   }
 
   _selectBiome(biomeKey) {
-    runState.reset()
     runState.selectedBiome = biomeKey
     import('./BattlefieldScene.js').then(({ BattlefieldScene }) => {
       fadeToScene(sceneManager.app, () => sceneManager.go(new BattlefieldScene()))

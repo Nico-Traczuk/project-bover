@@ -11,14 +11,13 @@ export const runState = {
   _upgradeSystem: null,
 
   reset() {
-    this.selectedClass = null
     this.goldEarned = 0
     this.currentWave = 0
     this.castleHp = CASTLE_BASE_HP
     this.castleMaxHp = CASTLE_BASE_HP
     this.bossDefeated = false
     this._upgradeSystem = null
-    // selectedBiome intentionally NOT reset — player returns to same biome
+    // selectedClass and selectedBiome persist across runs within a session
   },
 
   addGold(amount) {
