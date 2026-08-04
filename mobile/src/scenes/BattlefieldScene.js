@@ -11,10 +11,11 @@ import { HealthBar } from '../ui/HealthBar.js'
 import { GoldDisplay } from '../ui/GoldDisplay.js'
 import { fadeToScene } from '../core/transition.js'
 
-const ARENA = { x: 0, y: 76, w: 450, h: 524 }
-const CASTLE_Y = 464
-const CASTLE_H = 56
-const PLAYER_SPAWN = { x: 225, y: 280 }
+const WORLD_W = 450
+const WORLD_H = 1400
+const CASTLE_Y = 1100
+const CASTLE_H = 100
+const PLAYER_SPAWN = { x: 225, y: 600 }
 
 function makePlayer(classKey, metaUpgrades) {
   if (classKey === 'mage') return new Mage(metaUpgrades)
@@ -48,91 +49,101 @@ export class BattlefieldScene extends Container {
   _build() {
     const biome = this._biome
 
-    // Background
+    this._worldContainer = new Container()
+    this.addChild(this._worldContainer)
+
+    // World background
     const bg = new Graphics()
-    bg.rect(0, 0, 450, 800).fill(biome.colors.floor)
-    this.addChild(bg)
-
-    // Arena area
-    const arena = new Graphics()
-    arena.rect(ARENA.x, ARENA.y, ARENA.w, ARENA.h).fill(biome.colors.arena)
-    this.addChild(arena)
-
-    this._stage = new Container()
-    this._stage.x = ARENA.x
-    this._stage.y = ARENA.y
-    this.addChild(this._stage)
+    bg.rect(0, 0, WORLD_W, WORLD_H).fill(biome.colors.floor)
+    this._worldContainer.addChild(bg)
 
     this._buildBattlefield(biome)
-    this._buildHUD()
 
-    // Player
     this._player.x = PLAYER_SPAWN.x
     this._player.y = PLAYER_SPAWN.y
-    this._stage.addChild(this._player)
+    this._worldContainer.addChild(this._player)
 
-    this._buildStartWaveButton()
+    // HUD (fixed — not in worldContainer)
+    this._buildHUD()
+    this._buildBottomUI()
   }
 
   _buildBattlefield(biome) {
     const g = new Graphics()
 
-    // Path 1 (left)
+    // Paths from top to castle
     g.rect(115, 0, 70, CASTLE_Y).fill({ color: biome.colors.path, alpha: 0.5 })
-    // Path 2 (right)
     g.rect(265, 0, 70, CASTLE_Y).fill({ color: biome.colors.path, alpha: 0.5 })
 
-    // Castle base
+    // Castle wall
     g.rect(50, CASTLE_Y, 350, CASTLE_H).fill(biome.colors.castle)
     g.rect(50, CASTLE_Y, 350, CASTLE_H).stroke({ width: 2, color: 0xC8A857 })
 
-    this._stage.addChild(g)
+    // Spawn zone indicator at very top
+    g.rect(0, 0, WORLD_W, 10).fill({ color: 0xEF4444, alpha: 0.12 })
 
-    const castleLabel = new Text({ text: '🏰  CASTLE', style: { fill: 0xC8A857, fontSize: 16, fontWeight: 'bold' } })
+    this._worldContainer.addChild(g)
+
+    const castleLabel = new Text({
+      text: '🏰  CASTLE',
+      style: { fill: 0xC8A857, fontSize: 16, fontWeight: 'bold' },
+    })
     castleLabel.anchor.set(0.5)
     castleLabel.x = 225
     castleLabel.y = CASTLE_Y + CASTLE_H / 2
-    this._stage.addChild(castleLabel)
+    this._worldContainer.addChild(castleLabel)
 
-    // Structure slot markers (Plan 3 adds real structures)
+    const merchantMarker = new Text({
+      text: '🛒 Merchant',
+      style: { fill: 0x9CA3AF, fontSize: 12 },
+    })
+    merchantMarker.anchor.set(0.5)
+    merchantMarker.x = 225
+    merchantMarker.y = CASTLE_Y + 75
+    merchantMarker.eventMode = 'static'
+    merchantMarker.cursor = 'pointer'
+    merchantMarker.on('pointerup', () => console.log('Merchant tapped — shop coming in Plan 4'))
+    this._worldContainer.addChild(merchantMarker)
+
     this._buildStructureSlots()
-
-    // Merchant NPC marker
-    const merchantMarker = new Text({ text: '🛒 Merchant', style: { fill: 0x9CA3AF, fontSize: 12 } })
-    merchantMarker.x = 175
-    merchantMarker.y = CASTLE_Y + 38
-    this._stage.addChild(merchantMarker)
   }
 
   _buildStructureSlots() {
     const slots = [
-      { x: 140, y: CASTLE_Y - 50, label: '[Tower Slot]' },
-      { x: 270, y: CASTLE_Y - 50, label: '[Gate Slot]' },
-      { x: 210, y: CASTLE_Y - 20, label: '[Shrine Slot]' },
+      { x: 150, y: CASTLE_Y - 150, label: '[Tower Slot]' },
+      { x: 300, y: CASTLE_Y - 150, label: '[Gate Slot]' },
+      { x: 225, y: CASTLE_Y - 80,  label: '[Shrine Slot]' },
     ]
     slots.forEach(({ x, y, label }) => {
+      const slotC = new Container()
+      slotC.x = x
+      slotC.y = y
+      slotC.eventMode = 'static'
+      slotC.cursor = 'pointer'
+
       const slotG = new Graphics()
-      slotG.rect(x - 28, y - 10, 56, 28).stroke({ width: 1, color: 0x374151, alpha: 0.6 })
-      this._stage.addChild(slotG)
-      const slotTxt = new Text({ text: label, style: { fill: 0x374151, fontSize: 9 } })
-      slotTxt.anchor.set(0.5)
-      slotTxt.x = x
-      slotTxt.y = y + 4
-      this._stage.addChild(slotTxt)
+      slotG.rect(-32, -14, 64, 28).stroke({ width: 1, color: 0x4B5563, alpha: 0.8 })
+      slotC.addChild(slotG)
+
+      const slotTxt = new Text({ text: label, style: { fill: 0x6B7280, fontSize: 10 } })
+      slotTxt.anchor.set(0.5, 0.5)
+      slotC.addChild(slotTxt)
+
+      slotC.on('pointerup', () => console.log(`${label} tapped — structures coming in Plan 3`))
+      this._worldContainer.addChild(slotC)
     })
   }
 
   _buildHUD() {
-    // HUD panel (same pattern as CombatScene)
     const hudPanelTex = Assets.get('ui_panel_fill')
     if (hudPanelTex) {
       const hudFill = new NineSliceSprite({ texture: hudPanelTex, leftWidth: 10, topHeight: 10, rightWidth: 10, bottomHeight: 10 })
-      hudFill.width = 450; hudFill.height = 76; hudFill.tint = 0x0a0f1a
+      hudFill.width = WORLD_W; hudFill.height = 76; hudFill.tint = 0x0a0f1a
       this.addChild(hudFill)
       const hudBorderTex = Assets.get('ui_panel_border')
       if (hudBorderTex) {
         const hudBorder = new NineSliceSprite({ texture: hudBorderTex, leftWidth: 10, topHeight: 10, rightWidth: 10, bottomHeight: 10 })
-        hudBorder.width = 450; hudBorder.height = 76; hudBorder.tint = 0x6B7280
+        hudBorder.width = WORLD_W; hudBorder.height = 76; hudBorder.tint = 0x6B7280
         this.addChild(hudBorder)
       }
     }
@@ -149,44 +160,48 @@ export class BattlefieldScene extends Container {
     biomeLabel.x = 8; biomeLabel.y = 54
     this.addChild(biomeLabel)
 
-    // Bottom strip
-    const bottomBg = new Graphics()
-    bottomBg.rect(0, 600, 450, 200).fill(0x0a0f1a)
-    this.addChild(bottomBg)
-
-    const prepLabel = new Text({ text: 'PREP PHASE — Upgrade your castle then press START WAVE', style: { fill: 0x9CA3AF, fontSize: 11 } })
-    prepLabel.anchor.set(0.5)
-    prepLabel.x = 225
-    prepLabel.y = 618
-    this.addChild(prepLabel)
-
-    // Joystick gfx
     this._joystickGfx = new Graphics()
     this.addChild(this._joystickGfx)
   }
 
-  _buildStartWaveButton() {
+  _buildBottomUI() {
+    const vh = sceneManager.viewportH
+    const bottomY = vh - 160
+
+    const bottomBg = new Graphics()
+    bottomBg.rect(0, bottomY, WORLD_W, 160).fill(0x0a0f1a)
+    this.addChild(bottomBg)
+
+    const prepLabel = new Text({
+      text: 'PREP PHASE — Upgrade your castle then press START WAVE',
+      style: { fill: 0x9CA3AF, fontSize: 11 },
+    })
+    prepLabel.anchor.set(0.5)
+    prepLabel.x = 225
+    prepLabel.y = bottomY + 18
+    this.addChild(prepLabel)
+
     const fillTex = Assets.get('ui_panel_fill')
     const borderTex = Assets.get('ui_panel_border')
 
     if (fillTex) {
       const btn = new NineSliceSprite({ texture: fillTex, leftWidth: 8, topHeight: 8, rightWidth: 8, bottomHeight: 8 })
-      btn.width = 220; btn.height = 52; btn.x = 115; btn.y = 638; btn.tint = 0x15803D
+      btn.width = 220; btn.height = 52; btn.x = 115; btn.y = bottomY + 38; btn.tint = 0x15803D
       this.addChild(btn)
       if (borderTex) {
         const btnB = new NineSliceSprite({ texture: borderTex, leftWidth: 8, topHeight: 8, rightWidth: 8, bottomHeight: 8 })
-        btnB.width = 220; btnB.height = 52; btnB.x = 115; btnB.y = 638; btnB.tint = 0xC8A857
+        btnB.width = 220; btnB.height = 52; btnB.x = 115; btnB.y = bottomY + 38; btnB.tint = 0xC8A857
         this.addChild(btnB)
       }
     } else {
       const btnBg = new Graphics()
-      btnBg.rect(115, 638, 220, 52).fill(0x15803D)
+      btnBg.rect(115, bottomY + 38, 220, 52).fill(0x15803D)
       this.addChild(btnBg)
     }
 
     const btnText = new Text({ text: '⚔  START WAVE', style: { fill: 0xF5DEB3, fontSize: 18, fontWeight: 'bold' } })
     btnText.anchor.set(0.5)
-    btnText.x = 225; btnText.y = 664
+    btnText.x = 225; btnText.y = bottomY + 64
     btnText.eventMode = 'static'
     btnText.cursor = 'pointer'
     btnText.on('pointerup', () => this._startWave())
@@ -207,9 +222,14 @@ export class BattlefieldScene extends Container {
       const move = inputManager.getMovement()
       const speed = this._player.stats.speed
 
-      this._player.x = Math.max(16, Math.min(ARENA.w - 16, this._player.x + move.x * speed * dt))
-      this._player.y = Math.max(24, Math.min(CASTLE_Y - 20, this._player.y + move.y * speed * dt))
+      this._player.x = Math.max(16, Math.min(WORLD_W - 16, this._player.x + move.x * speed * dt))
+      this._player.y = Math.max(50, Math.min(CASTLE_Y - 20, this._player.y + move.y * speed * dt))
       this._player.animateTick(dt, move.x, move.y)
+
+      // Camera: keep player centered vertically, clamp at world edges
+      const vh = sceneManager.viewportH
+      const camY = Math.min(0, Math.max(vh - WORLD_H, vh / 2 - this._player.y))
+      this._worldContainer.y = camY
 
       this._healthBar.update(this._player.stats.hp, this._player.stats.maxHp)
       this._goldDisplay.update(runState.goldEarned)
