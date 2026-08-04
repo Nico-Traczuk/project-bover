@@ -55,7 +55,7 @@ export function isWaveChest(wave) {
   return wave === 3 || wave === 7 || wave === 12
 }
 
-export function enemyCountForWave(wave) {
+export function spawnCountForWave(wave) {
   const base = 3 + Math.floor(wave * 0.6)
   return Math.min(base, 14)
 }
