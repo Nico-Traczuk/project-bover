@@ -11,6 +11,13 @@ const ENEMY_SPRITE = {
   skeleton_archer: 'enemy_skeleton_archer',
   dark_knight:     'enemy_dark_knight',
   shadow_mage:     'enemy_shadow_mage',
+  glowing_wisp:    'enemy_glowing_wisp',
+  expert_druid:    'enemy_expert_druid',
+  magical_fairy:   'enemy_magical_fairy',
+  ice_golem:       'enemy_ice_golem',
+  fire_elemental:  'enemy_fire_elemental',
+  earth_elemental: 'enemy_earth_elemental',
+  water_elemental: 'enemy_water_elemental',
 }
 
 function sliceEnemy(texture) {
