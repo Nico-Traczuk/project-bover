@@ -168,6 +168,7 @@ export class WaveScene extends Container {
       player: this._player,
       upgradeSystem: this._upgradeSystem,
       stage: this._stage,
+      biomeKey: runState.selectedBiome,
       onWaveAnnounce: (wave) => this._onWaveAnnounce(wave),
       onCastleDamage: (dmg) => this._onCastleDamage(dmg),
       onRunWon: () => this._onRunWon(),
