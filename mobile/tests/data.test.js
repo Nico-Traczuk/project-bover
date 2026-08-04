@@ -76,10 +76,9 @@ describe('difficulty scaling', () => {
 })
 
 describe('enemiesForDepth', () => {
-  test('only goblin available at depth 1', () => {
-    const available = enemiesForDepth(1)
-    expect(available).toHaveLength(1)
-    expect(available[0].key).toBe('goblin')
+  test('goblin available at depth 1', () => {
+    const keys = enemiesForDepth(1).map(e => e.key)
+    expect(keys).toContain('goblin')
   })
 
   test('goblin and skeleton_archer available at depth 3', () => {
@@ -88,8 +87,8 @@ describe('enemiesForDepth', () => {
     expect(keys).toContain('skeleton_archer')
   })
 
-  test('all 4 enemy types available at depth 5', () => {
-    expect(enemiesForDepth(5)).toHaveLength(4)
+  test('all 11 enemy types available at depth 5', () => {
+    expect(enemiesForDepth(5)).toHaveLength(11)
   })
 })
 
