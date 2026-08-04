@@ -7,7 +7,7 @@ import {
   enemyPoolForWave,
 } from '../data/biomes.js'
 
-const CASTLE_Y = 464
+const CASTLE_Y = 1100
 const SPAWN_POSITIONS = [
   { x: 150, y: 10 },
   { x: 300, y: 10 },
