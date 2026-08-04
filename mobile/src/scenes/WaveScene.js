@@ -15,10 +15,11 @@ import { XpBar } from '../ui/XpBar.js'
 import { fadeToScene } from '../core/transition.js'
 import { xpForLevel } from '../data/upgrades.js'
 
-const ARENA = { x: 0, y: 76, w: 450, h: 524 }
-const CASTLE_Y = 464
-const CASTLE_H = 56
-const PLAYER_SPAWN = { x: 225, y: 280 }
+const WORLD_W = 450
+const WORLD_H = 1400
+const CASTLE_Y = 1100
+const CASTLE_H = 100
+const PLAYER_SPAWN = { x: 225, y: 600 }
 
 function makePlayer(classKey, metaUpgrades) {
   if (classKey === 'mage') return new Mage(metaUpgrades)
@@ -60,35 +61,30 @@ export class WaveScene extends Container {
   _build() {
     const biome = this._biome
 
+    // World container — everything that scrolls with the camera
+    this._worldContainer = new Container()
+    this.addChild(this._worldContainer)
+
+    // World background
     const bg = new Graphics()
-    bg.rect(0, 0, 450, 800).fill(biome.colors.floor)
-    this.addChild(bg)
-
-    const arena = new Graphics()
-    arena.rect(ARENA.x, ARENA.y, ARENA.w, ARENA.h).fill(biome.colors.arena)
-    this.addChild(arena)
-
-    const border = new Graphics()
-    border.rect(ARENA.x, ARENA.y, ARENA.w, ARENA.h).stroke({ width: 2, color: biome.colors.border })
-    this.addChild(border)
-
-    this._stage = new Container()
-    this._stage.x = ARENA.x
-    this._stage.y = ARENA.y
-    this.addChild(this._stage)
+    bg.rect(0, 0, WORLD_W, WORLD_H).fill(biome.colors.floor)
+    this._worldContainer.addChild(bg)
 
     this._buildBattlefield(biome)
 
     this._player.x = PLAYER_SPAWN.x
     this._player.y = PLAYER_SPAWN.y
-    this._stage.addChild(this._player)
+    this._worldContainer.addChild(this._player)
 
+    // Trail graphics (world space)
     this._trailGfx = new Graphics()
-    this._stage.addChild(this._trailGfx)
+    this._worldContainer.addChild(this._trailGfx)
 
+    // VFX layer (world space)
     this._vfx = new VFXLayer()
-    this.addChild(this._vfx)
+    this._worldContainer.addChild(this._vfx)
 
+    // HUD (fixed — not in worldContainer)
     this._buildHUD()
     this._buildWaveSystem()
     this._startTicker()
@@ -96,21 +92,28 @@ export class WaveScene extends Container {
 
   _buildBattlefield(biome) {
     const g = new Graphics()
+
+    // Paths
     g.rect(115, 0, 70, CASTLE_Y).fill({ color: biome.colors.path, alpha: 0.5 })
     g.rect(265, 0, 70, CASTLE_Y).fill({ color: biome.colors.path, alpha: 0.5 })
+
+    // Castle
     g.rect(50, CASTLE_Y, 350, CASTLE_H).fill(biome.colors.castle)
     g.rect(50, CASTLE_Y, 350, CASTLE_H).stroke({ width: 2, color: 0xC8A857 })
-    this._stage.addChild(g)
 
-    const castleLabel = new Text({ text: '🏰  CASTLE', style: { fill: 0xC8A857, fontSize: 14, fontWeight: 'bold' } })
+    // Spawn zone indicator
+    g.rect(0, 0, WORLD_W, 8).fill({ color: 0xEF4444, alpha: 0.15 })
+
+    this._worldContainer.addChild(g)
+
+    const castleLabel = new Text({
+      text: '🏰  CASTLE',
+      style: { fill: 0xC8A857, fontSize: 14, fontWeight: 'bold' },
+    })
     castleLabel.anchor.set(0.5)
     castleLabel.x = 225
     castleLabel.y = CASTLE_Y + 20
-    this._stage.addChild(castleLabel)
-
-    const spawnG = new Graphics()
-    spawnG.rect(0, 0, 450, 8).fill({ color: 0xEF4444, alpha: 0.15 })
-    this._stage.addChild(spawnG)
+    this._worldContainer.addChild(castleLabel)
   }
 
   _buildHUD() {
@@ -119,11 +122,11 @@ export class WaveScene extends Container {
 
     if (hudPanelTex) {
       const hudFill = new NineSliceSprite({ texture: hudPanelTex, leftWidth: 10, topHeight: 10, rightWidth: 10, bottomHeight: 10 })
-      hudFill.width = 450; hudFill.height = 76; hudFill.tint = 0x0a0f1a
+      hudFill.width = WORLD_W; hudFill.height = 76; hudFill.tint = 0x0a0f1a
       this.addChild(hudFill)
       if (hudBorderTex) {
         const hudBorder = new NineSliceSprite({ texture: hudBorderTex, leftWidth: 10, topHeight: 10, rightWidth: 10, bottomHeight: 10 })
-        hudBorder.width = 450; hudBorder.height = 76; hudBorder.tint = 0x6B7280
+        hudBorder.width = WORLD_W; hudBorder.height = 76; hudBorder.tint = 0x6B7280
         this.addChild(hudBorder)
       }
     }
@@ -149,15 +152,12 @@ export class WaveScene extends Container {
     this._goldDisplay.x = 310; this._goldDisplay.y = 8
     this.addChild(this._goldDisplay)
 
+    // Castle HP bar fixed in HUD
     this._castleHpBar = new HealthBar(350, 12)
     this._castleHpBar.x = 50
-    this._castleHpBar.y = 76 + CASTLE_Y + 4
+    this._castleHpBar.y = 60
     this.addChild(this._castleHpBar)
     this._castleHpBar.update(runState.castleMaxHp, runState.castleMaxHp)
-
-    const bottomBg = new Graphics()
-    bottomBg.rect(0, 600, 450, 200).fill(0x0a0f1a)
-    this.addChild(bottomBg)
 
     this._joystickGfx = new Graphics()
     this.addChild(this._joystickGfx)
@@ -167,7 +167,7 @@ export class WaveScene extends Container {
     this._waveSystem = new WaveSystem({
       player: this._player,
       upgradeSystem: this._upgradeSystem,
-      stage: this._stage,
+      stage: this._worldContainer,
       biomeKey: runState.selectedBiome,
       onWaveAnnounce: (wave) => this._onWaveAnnounce(wave),
       onCastleDamage: (dmg) => this._onCastleDamage(dmg),
@@ -177,8 +177,9 @@ export class WaveScene extends Container {
       onXpEarned: (xp) => this._onXpEarned(xp),
       onPlayerHurt: () => this._onPlayerHurt(),
       onEffect: (type, x, y, value) => {
-        const vy = type === 'damage' ? ARENA.y + y - 28 : ARENA.y + y
-        this._vfx.spawn(type, ARENA.x + x, vy, value)
+        // x, y are world coordinates — no ARENA offset needed
+        const vy = type === 'damage' ? y - 28 : y
+        this._vfx.spawn(type, x, vy, value)
       },
     })
   }
@@ -191,6 +192,7 @@ export class WaveScene extends Container {
 
       this._updatePlayer(dt)
 
+      // Trail rendering (world coords)
       this._trailGfx.clear()
       this._waveSystem.projectiles.forEach(p => {
         if (p.isMelee) return
@@ -205,14 +207,20 @@ export class WaveScene extends Container {
       this._vfx.tick(dt)
       this._waveSystem.tick(dt, this._player.x, this._player.y, this._getAimAngle())
 
+      // Camera: center player vertically, clamp at world edges
+      const vh = sceneManager.viewportH
+      let camY = Math.min(0, Math.max(vh - WORLD_H, vh / 2 - this._player.y))
+
+      // Shake applied on top of camera
       if (this._shakeTimer > 0) {
         this._shakeTimer -= dt
         const t = Math.max(0, this._shakeTimer / 0.3)
         const mag = this._shakeIntensity * t
-        this._stage.x = ARENA.x + (Math.random() * 2 - 1) * mag
-        this._stage.y = ARENA.y + (Math.random() * 2 - 1) * mag
-        if (this._shakeTimer <= 0) { this._stage.x = ARENA.x; this._stage.y = ARENA.y }
+        this._worldContainer.x = (Math.random() * 2 - 1) * mag
+        camY += (Math.random() * 2 - 1) * mag
+        if (this._shakeTimer <= 0) this._worldContainer.x = 0
       }
+      this._worldContainer.y = camY
 
       this._healthBar.update(this._player.stats.hp, this._player.stats.maxHp)
       this._castleHpBar.update(this._castleHp, runState.castleMaxHp)
@@ -226,7 +234,7 @@ export class WaveScene extends Container {
   _updatePlayer(dt) {
     const move = inputManager.getMovement()
     const speed = this._player.stats.speed
-    this._player.x = Math.max(16, Math.min(ARENA.w - 16, this._player.x + move.x * speed * dt))
+    this._player.x = Math.max(16, Math.min(WORLD_W - 16, this._player.x + move.x * speed * dt))
     this._player.y = Math.max(24, Math.min(CASTLE_Y - 20, this._player.y + move.y * speed * dt))
     this._player.animateTick(dt, move.x, move.y)
   }
@@ -244,8 +252,9 @@ export class WaveScene extends Container {
       if (nearest) return Math.atan2(nearest.y - this._player.y, nearest.x - this._player.x)
       return 0
     }
-    const mx = inputManager.mouseWorld.x - ARENA.x
-    const my = inputManager.mouseWorld.y - ARENA.y
+    // Convert mouse screen-Y to world-Y by subtracting camera offset
+    const mx = inputManager.mouseWorld.x
+    const my = inputManager.mouseWorld.y - this._worldContainer.y
     return Math.atan2(my - this._player.y, mx - this._player.x)
   }
 
@@ -255,7 +264,9 @@ export class WaveScene extends Container {
     const waveMsg = isElite ? `⚔  ELITE WAVE ${wave}!` : `Wave ${wave}`
     const color = isElite ? 0x8B5CF6 : 0xF5DEB3
     const msg = new Text({ text: waveMsg, style: { fill: color, fontSize: 20, fontWeight: 'bold' } })
-    msg.anchor.set(0.5); msg.x = 225; msg.y = 120
+    msg.anchor.set(0.5)
+    msg.x = 225
+    msg.y = sceneManager.viewportH / 2
     this.addChild(msg)
     setTimeout(() => { if (msg.parent) msg.parent.removeChild(msg) }, 2500)
   }
@@ -265,7 +276,9 @@ export class WaveScene extends Container {
     this._shakeTimer = 0.2
 
     const msg = new Text({ text: `-${dmg} CASTLE`, style: { fill: 0xEF4444, fontSize: 14 } })
-    msg.anchor.set(0.5); msg.x = 225; msg.y = 76 + CASTLE_Y - 10
+    msg.anchor.set(0.5)
+    msg.x = 225
+    msg.y = sceneManager.viewportH - 80
     this.addChild(msg)
     setTimeout(() => { if (msg.parent) msg.parent.removeChild(msg) }, 1500)
 
@@ -284,7 +297,7 @@ export class WaveScene extends Container {
       this._level++
       this._xpToNext = xpForLevel(this._level)
       this._levelText.text = `Level ${this._level}`
-      this._vfx?.spawn('levelup', ARENA.x + this._player.x, ARENA.y + this._player.y, null)
+      this._vfx?.spawn('levelup', this._player.x, this._player.y, null)
       this._showUpgradeOverlay()
     }
     this._xpBar.update(this._xp, this._xpToNext)
@@ -308,11 +321,13 @@ export class WaveScene extends Container {
   _endRun(won, message) {
     this._stopTicker()
     const flash = new Graphics()
-    flash.rect(0, 0, 450, 800).fill({ color: won ? 0xF59E0B : 0xFFFFFF, alpha: 0.5 })
+    flash.rect(0, 0, WORLD_W, sceneManager.viewportH).fill({ color: won ? 0xF59E0B : 0xFFFFFF, alpha: 0.5 })
     this.addChild(flash)
 
     const msg = new Text({ text: message, style: { fill: won ? 0xF59E0B : 0xEF4444, fontSize: 32, fontWeight: 'bold' } })
-    msg.anchor.set(0.5); msg.x = 225; msg.y = 380
+    msg.anchor.set(0.5)
+    msg.x = 225
+    msg.y = sceneManager.viewportH / 2
     this.addChild(msg)
 
     setTimeout(() => {
