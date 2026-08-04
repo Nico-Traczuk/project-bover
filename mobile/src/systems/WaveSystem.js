@@ -4,6 +4,7 @@ import { CollisionSystem } from './CollisionSystem.js'
 import {
   TOTAL_WAVES, WAVE_TIMER_SECONDS,
   spawnCountForWave, waveHpMultiplier, waveDamageMultiplier, waveGoldMultiplier,
+  enemyPoolForWave,
 } from '../data/biomes.js'
 
 const CASTLE_Y = 464
@@ -20,6 +21,7 @@ export class WaveSystem {
     player, upgradeSystem, stage,
     onWaveAnnounce, onCastleDamage, onRunWon, onPlayerDeath,
     onGoldEarned, onXpEarned, onPlayerHurt, onEffect,
+    biomeKey,
   }) {
     this.player = player
     this.upgradeSystem = upgradeSystem
@@ -41,6 +43,7 @@ export class WaveSystem {
     this.currentWave = 0
     this._waveTimer = 0
     this.runOver = false
+    this._biomeKey = biomeKey ?? 'forest'
   }
 
   beginFirstWave() {
@@ -63,17 +66,9 @@ export class WaveSystem {
     }
   }
 
-  _enemyPoolForWave(wave) {
-    const pool = ['goblin']
-    if (wave >= 3)  pool.push('skeleton_archer')
-    if (wave >= 9)  pool.push('dark_knight')
-    if (wave >= 12) pool.push('shadow_mage')
-    return pool
-  }
-
   _makeEnemy() {
     const wave = this.currentWave
-    const pool = this._enemyPoolForWave(wave)
+    const pool = enemyPoolForWave(this._biomeKey, wave)
     const typeKey = pool[Math.floor(Math.random() * pool.length)]
     const enemy = new BaseEnemy(typeKey)
     enemy.stats.hp = Math.round(enemy.stats.hp * waveHpMultiplier(wave))
