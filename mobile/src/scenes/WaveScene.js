@@ -4,7 +4,7 @@ import { sceneManager } from '../core/SceneManager.js'
 import { runState } from '../core/RunState.js'
 import { authState } from '../core/AuthState.js'
 import { inputManager } from '../core/InputManager.js'
-import { BIOMES, TOTAL_WAVES } from '../data/biomes.js'
+import { BIOMES, TOTAL_WAVES, isWaveElite } from '../data/biomes.js'
 import { Mage } from '../entities/player/Mage.js'
 import { Tank } from '../entities/player/Tank.js'
 import { UpgradeSystem } from '../systems/UpgradeSystem.js'
@@ -19,7 +19,6 @@ const ARENA = { x: 0, y: 76, w: 450, h: 524 }
 const CASTLE_Y = 464
 const CASTLE_H = 56
 const PLAYER_SPAWN = { x: 225, y: 280 }
-const CASTLE_MAX_HP = 300
 
 function makePlayer(classKey, metaUpgrades) {
   if (classKey === 'mage') return new Mage(metaUpgrades)
@@ -37,7 +36,7 @@ export class WaveScene extends Container {
     this._xp = 0
     this._level = 1
     this._xpToNext = xpForLevel(1)
-    this._castleHp = CASTLE_MAX_HP
+    this._castleHp = runState.castleHp
     this._runEnded = false
 
     const biome = BIOMES[runState.selectedBiome] ?? BIOMES.forest
@@ -154,7 +153,7 @@ export class WaveScene extends Container {
     this._castleHpBar.x = 50
     this._castleHpBar.y = 76 + CASTLE_Y + 4
     this.addChild(this._castleHpBar)
-    this._castleHpBar.update(CASTLE_MAX_HP, CASTLE_MAX_HP)
+    this._castleHpBar.update(runState.castleMaxHp, runState.castleMaxHp)
 
     const bottomBg = new Graphics()
     bottomBg.rect(0, 600, 450, 200).fill(0x0a0f1a)
@@ -214,7 +213,7 @@ export class WaveScene extends Container {
       }
 
       this._healthBar.update(this._player.stats.hp, this._player.stats.maxHp)
-      this._castleHpBar.update(this._castleHp, CASTLE_MAX_HP)
+      this._castleHpBar.update(this._castleHp, runState.castleMaxHp)
       this._goldDisplay.update(runState.goldEarned)
       this._waveText.text = `Wave ${this._waveSystem.currentWave} / ${TOTAL_WAVES}`
       this._drawJoystick()
@@ -250,7 +249,7 @@ export class WaveScene extends Container {
 
   _onWaveAnnounce(wave) {
     runState.currentWave = wave
-    const isElite = wave === 5 || wave === 10
+    const isElite = isWaveElite(wave)
     const waveMsg = isElite ? `⚔  ELITE WAVE ${wave}!` : `Wave ${wave}`
     const color = isElite ? 0x8B5CF6 : 0xF5DEB3
     const msg = new Text({ text: waveMsg, style: { fill: color, fontSize: 20, fontWeight: 'bold' } })

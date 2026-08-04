@@ -27,6 +27,8 @@ export class BattlefieldScene extends Container {
     super()
     this._tickerFn = null
 
+    runState.reset()
+
     const biome = BIOMES[runState.selectedBiome] ?? BIOMES.forest
     this._biome = biome
 
