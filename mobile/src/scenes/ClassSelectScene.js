@@ -7,7 +7,12 @@ import { fadeToScene } from '../core/transition.js'
 
 const CHAR_FRAMES = {
   mage: { col: 0, row: 0 },
-  tank: { col: 0, row: 4 },
+}
+
+// Classes that use per-animation sheets instead of characters.png
+// alias → idle sheet alias, frameSize → px per frame
+const CHAR_SHEET_PORTRAITS = {
+  tank: { alias: 'tank_idle', frameSize: 96 },
 }
 
 const STAT_ICONS = { HP: '♥', SPD: '⚡', DEF: '🛡', DMG: '⚔' }
@@ -42,23 +47,40 @@ function makeClassCard(classKey, classDef, x, y, onClick) {
   }
 
   // Character sprite avatar
-  const charTex = Assets.get('characters')
-  if (charTex) {
-    const { col, row } = CHAR_FRAMES[classKey] ?? { col: 0, row: 0 }
-    const frameTex = new Texture({
-      source: charTex.source,
-      frame: new Rectangle(col * 17, row * 17, 16, 16),
-    })
-    const avatar = new Sprite(frameTex)
-    avatar.anchor.set(0.5)
-    avatar.scale.set(4)               // 64×64
-    avatar.x = CARD_W / 2
-    avatar.y = 56
-    c.addChild(avatar)
+  const sheetPortrait = CHAR_SHEET_PORTRAITS[classKey]
+  if (sheetPortrait) {
+    const sheetTex = Assets.get(sheetPortrait.alias)
+    if (sheetTex) {
+      const frameTex = new Texture({
+        source: sheetTex.source,
+        frame: new Rectangle(0, 0, sheetPortrait.frameSize, sheetPortrait.frameSize),
+      })
+      const avatar = new Sprite(frameTex)
+      avatar.anchor.set(0.5)
+      avatar.scale.set(2.85)
+      avatar.x = CARD_W / 2
+      avatar.y = 56
+      c.addChild(avatar)
+    }
   } else {
-    const avatar = new Graphics()
-    avatar.rect(CARD_W / 2 - 32, 20, 64, 64).fill(classDef.color)
-    c.addChild(avatar)
+    const charTex = Assets.get('characters')
+    if (charTex) {
+      const { col, row } = CHAR_FRAMES[classKey] ?? { col: 0, row: 0 }
+      const frameTex = new Texture({
+        source: charTex.source,
+        frame: new Rectangle(col * 17, row * 17, 16, 16),
+      })
+      const avatar = new Sprite(frameTex)
+      avatar.anchor.set(0.5)
+      avatar.scale.set(4)
+      avatar.x = CARD_W / 2
+      avatar.y = 56
+      c.addChild(avatar)
+    } else {
+      const avatar = new Graphics()
+      avatar.rect(CARD_W / 2 - 32, 20, 64, 64).fill(classDef.color)
+      c.addChild(avatar)
+    }
   }
 
   // Class name

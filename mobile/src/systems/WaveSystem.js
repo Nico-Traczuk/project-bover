@@ -1,4 +1,4 @@
-import { Goblin } from '../entities/enemies/Goblin.js'
+import { BaseEnemy } from '../entities/enemies/BaseEnemy.js'
 import { Projectile } from '../entities/Projectile.js'
 import { CollisionSystem } from './CollisionSystem.js'
 import {
@@ -63,9 +63,19 @@ export class WaveSystem {
     }
   }
 
+  _enemyPoolForWave(wave) {
+    const pool = ['goblin']
+    if (wave >= 3)  pool.push('skeleton_archer')
+    if (wave >= 9)  pool.push('dark_knight')
+    if (wave >= 12) pool.push('shadow_mage')
+    return pool
+  }
+
   _makeEnemy() {
     const wave = this.currentWave
-    const enemy = new Goblin(1)
+    const pool = this._enemyPoolForWave(wave)
+    const typeKey = pool[Math.floor(Math.random() * pool.length)]
+    const enemy = new BaseEnemy(typeKey)
     enemy.stats.hp = Math.round(enemy.stats.hp * waveHpMultiplier(wave))
     enemy.stats.maxHp = enemy.stats.hp
     enemy.stats.damage = Math.round(enemy.stats.damage * waveDamageMultiplier(wave))

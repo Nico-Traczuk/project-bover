@@ -1,11 +1,25 @@
-import { Container, Graphics, Sprite, Texture, Rectangle, Assets } from 'pixi.js'
+import { Container, Graphics, Sprite, AnimatedSprite, Texture, Rectangle, Assets } from 'pixi.js'
 import { ENEMY_TYPES, difficultyMultiplier, speedMultiplier } from '../../data/enemies.js'
 
-const ENEMY_FRAMES = {
-  goblin: { row: 7 },
+const BASE_SCALE = 3
+const FRAME_SIZE = 16
+const FRAME_COUNT = 4
+
+// Maps enemy typeKey → asset alias for new sprites (4-frame 16×16 sheets)
+const ENEMY_SPRITE = {
+  goblin:          'enemy_goblin',
+  skeleton_archer: 'enemy_skeleton_archer',
+  dark_knight:     'enemy_dark_knight',
+  shadow_mage:     'enemy_shadow_mage',
 }
 
-const BASE_SCALE = 3
+function sliceEnemy(texture) {
+  const frames = []
+  for (let i = 0; i < FRAME_COUNT; i++) {
+    frames.push(new Texture({ source: texture.source, frame: new Rectangle(i * FRAME_SIZE, 0, FRAME_SIZE, FRAME_SIZE) }))
+  }
+  return frames
+}
 
 export class BaseEnemy extends Container {
   constructor(typeKey, depth = 1) {
@@ -46,13 +60,13 @@ export class BaseEnemy extends Container {
     // Spawn pop-in
     this._spawnTimer = 0.3
 
-    const charTex = Assets.get('characters')
-    if (charTex) {
-      const { row } = ENEMY_FRAMES[typeKey] ?? { row: 7 }
-      const tex = new Texture({ source: charTex.source, frame: new Rectangle(0, row * 17, 16, 16) })
-      this._gfx = new Sprite(tex)
+    const spriteAlias = ENEMY_SPRITE[typeKey]
+    const spriteTex = spriteAlias ? Assets.get(spriteAlias) : null
+    if (spriteTex) {
+      this._gfx = new AnimatedSprite(sliceEnemy(spriteTex))
       this._gfx.anchor.set(0.5)
-      this._gfx.scale.set(BASE_SCALE)
+      this._gfx.animationSpeed = 0.12
+      this._gfx.play()
     } else {
       this._gfx = new Graphics()
       this._gfx.rect(-def.size / 2, -def.size / 2, def.size, def.size).fill(def.color)
@@ -86,8 +100,9 @@ export class BaseEnemy extends Container {
     this._dyingTimer -= dt
     const progress = Math.max(0, this._dyingTimer / 0.35)
     this.rotation += (Math.PI * 2 / 0.35) * dt
-    const s = BASE_SCALE * progress
-    this._gfx.scale.set(Math.max(0, s))
+    const s = Math.max(0, BASE_SCALE * progress)
+    this._gfx.scale.x = this._facing * s
+    this._gfx.scale.y = s
     this.alpha = progress
   }
 
@@ -107,9 +122,9 @@ export class BaseEnemy extends Container {
       const s = t < 0.7
         ? t / 0.7
         : 1 + 0.4 * ((t - 0.7) / 0.3) * (1 - (t - 0.7) / 0.3)
-      const scale = BASE_SCALE * Math.max(0, s)
-      this._gfx.scale.x = this._facing * scale
-      this._gfx.scale.y = scale
+      const sc = BASE_SCALE * Math.max(0, s)
+      this._gfx.scale.x = this._facing * sc
+      this._gfx.scale.y = sc
     }
   }
 

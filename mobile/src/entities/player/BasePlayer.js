@@ -1,13 +1,31 @@
-import { Container, Graphics, Sprite, Texture, Rectangle, Assets } from 'pixi.js'
+import { Container, Graphics, Sprite, AnimatedSprite, Texture, Rectangle, Assets } from 'pixi.js'
 
 import { CLASSES } from '../../data/classes.js'
 
 const CHAR_FRAMES = {
   mage: { row: 0 },
-  tank: { row: 5 },
 }
 
 const BASE_SCALE = 3
+
+// Classes with per-animation spritesheets (96×96 frames, single row)
+const CHAR_ANIM_CONFIG = {
+  tank: {
+    frameSize: 96,
+    scale: 1.85,
+    sheets: { idle: 'tank_idle', walk: 'tank_walk', attack: 'tank_attack', hurt: 'tank_hurt', death: 'tank_death' },
+    speeds: { idle: 0.1, walk: 0.18, attack: 0.35, hurt: 0.25, death: 0.12 },
+  },
+}
+
+function sliceSheet(texture, frameSize) {
+  const cols = Math.floor(texture.width / frameSize)
+  const frames = []
+  for (let i = 0; i < cols; i++) {
+    frames.push(new Texture({ source: texture.source, frame: new Rectangle(i * frameSize, 0, frameSize, frameSize) }))
+  }
+  return frames
+}
 
 export class BasePlayer extends Container {
   constructor(classKey, metaUpgrades = []) {
@@ -40,16 +58,37 @@ export class BasePlayer extends Container {
     this._attackScaleX = 1.3
     this._attackScaleY = 1.3
 
-    const charTex = Assets.get('characters')
-    if (charTex) {
-      const { row } = CHAR_FRAMES[classKey] ?? { row: 0 }
-      const tex = new Texture({ source: charTex.source, frame: new Rectangle(0, row * 17, 16, 16) })
-      this._gfx = new Sprite(tex)
-      this._gfx.anchor.set(0.5)
-      this._gfx.scale.set(BASE_SCALE)
+    const animConfig = CHAR_ANIM_CONFIG[classKey]
+    if (animConfig) {
+      this._animConfig = animConfig
+      this._currentAnim = null
+      this._sheets = {}
+      for (const [state, alias] of Object.entries(animConfig.sheets)) {
+        const tex = Assets.get(alias)
+        if (tex) this._sheets[state] = sliceSheet(tex, animConfig.frameSize)
+      }
+      const idleFrames = this._sheets.idle ?? []
+      this._gfx = idleFrames.length > 0 ? new AnimatedSprite(idleFrames) : new Graphics()
+      if (this._gfx instanceof AnimatedSprite) {
+        this._gfx.anchor.set(0.5)
+        this._gfx.scale.set(animConfig.scale)
+        this._gfx.animationSpeed = animConfig.speeds.idle
+        this._gfx.play()
+        this._currentAnim = 'idle'
+      }
     } else {
-      this._gfx = new Graphics()
-      this._gfx.rect(-16, -24, 32, 32).fill(def.color)
+      this._animConfig = null
+      const charTex = Assets.get('characters')
+      if (charTex) {
+        const { row } = CHAR_FRAMES[classKey] ?? { row: 0 }
+        const tex = new Texture({ source: charTex.source, frame: new Rectangle(0, row * 17, 16, 16) })
+        this._gfx = new Sprite(tex)
+        this._gfx.anchor.set(0.5)
+        this._gfx.scale.set(BASE_SCALE)
+      } else {
+        this._gfx = new Graphics()
+        this._gfx.rect(-16, -24, 32, 32).fill(def.color)
+      }
     }
     this.addChild(this._gfx)
   }
@@ -68,6 +107,18 @@ export class BasePlayer extends Container {
       gold_rush_2: () => { this.stats.goldBonus += 4 },
     }
     upgrades.forEach(key => { if (bonuses[key]) bonuses[key]() })
+  }
+
+  _setAnimSheet(state) {
+    if (!this._animConfig || !(this._gfx instanceof AnimatedSprite)) return
+    if (this._currentAnim === state) return
+    const frames = this._sheets[state] ?? this._sheets.idle
+    if (!frames) return
+    this._currentAnim = state
+    this._gfx.textures = frames
+    this._gfx.animationSpeed = this._animConfig.speeds[state] ?? 0.1
+    this._gfx.loop = state !== 'attack' && state !== 'hurt' && state !== 'death'
+    this._gfx.gotoAndPlay(0)
   }
 
   getAttackData(targetAngle) { return [] }
@@ -123,26 +174,34 @@ export class BasePlayer extends Container {
       this._idleTimer = 0
     }
 
-    let sx = 1, sy = 1
-    if (this._animState === 'attack') {
-      const half = 0.08, full = 0.15
-      const t = this._animTimer > half
-        ? (full - this._animTimer) / (full - half)
-        : this._animTimer / half
-      sx = 1 + t * (this._attackScaleX - 1)
-      sy = 1 + t * (this._attackScaleY - 1)
-    } else if (this._animState === 'idle') {
-      sy = 1 + Math.sin(this._idleTimer * 1.8) * 0.03
+    if (this._animConfig) {
+      // Real animated sprites — drive sheet swaps, skip manual bobs
+      this._setAnimSheet(this._animState)
+      const sc = this._animConfig.scale
+      this._gfx.scale.x = this._facing * sc
+      this._gfx.scale.y = sc
+    } else {
+      // Legacy scale-trick animation
+      let sx = 1, sy = 1
+      if (this._animState === 'attack') {
+        const half = 0.08, full = 0.15
+        const t = this._animTimer > half
+          ? (full - this._animTimer) / (full - half)
+          : this._animTimer / half
+        sx = 1 + t * (this._attackScaleX - 1)
+        sy = 1 + t * (this._attackScaleY - 1)
+      } else if (this._animState === 'idle') {
+        sy = 1 + Math.sin(this._idleTimer * 1.8) * 0.03
+      }
+      this._gfx.scale.x = this._facing * BASE_SCALE * sx
+      this._gfx.scale.y = BASE_SCALE * sy
     }
-
-    this._gfx.scale.x = this._facing * BASE_SCALE * sx
-    this._gfx.scale.y = BASE_SCALE * sy
 
     this._knockbackOffsetX *= Math.max(0, 1 - dt * 12)
     this._knockbackOffsetY *= Math.max(0, 1 - dt * 12)
     if (Math.abs(this._knockbackOffsetX) < 0.1) this._knockbackOffsetX = 0
     if (Math.abs(this._knockbackOffsetY) < 0.1) this._knockbackOffsetY = 0
-    const walkBob = moving ? Math.sin(this._walkTimer * Math.PI * 8) * 2 : 0
+    const walkBob = (!this._animConfig && moving) ? Math.sin(this._walkTimer * Math.PI * 8) * 2 : 0
     this._gfx.x = this._knockbackOffsetX
     this._gfx.y = this._knockbackOffsetY + walkBob
   }

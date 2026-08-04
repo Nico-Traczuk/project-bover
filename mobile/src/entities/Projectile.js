@@ -1,7 +1,7 @@
 import { Container, Graphics } from 'pixi.js'
 
 export class Projectile extends Container {
-  constructor({ x, y, angle, damage, speed, color, radius = 6, isMelee = false, isEnemyProjectile = false, ...extras }) {
+  constructor({ x, y, angle, damage, speed, color, radius = 6, isMelee = false, isEnemyProjectile = false, hidden = false, ...extras }) {
     super()
     Object.assign(this, extras)
     this.damage = damage
@@ -20,13 +20,15 @@ export class Projectile extends Container {
     this.x = x
     this.y = y
 
-    const g = new Graphics()
-    if (isMelee) {
-      g.circle(0, 0, radius).fill({ color, alpha: 0.5 })
-    } else {
-      g.circle(0, 0, radius).fill(color)
+    if (!hidden) {
+      const g = new Graphics()
+      if (isMelee) {
+        g.circle(0, 0, radius).fill({ color, alpha: 0.5 })
+      } else {
+        g.circle(0, 0, radius).fill(color)
+      }
+      this.addChild(g)
     }
-    this.addChild(g)
   }
 
   tick(deltaSeconds) {

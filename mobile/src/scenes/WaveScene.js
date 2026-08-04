@@ -192,6 +192,7 @@ export class WaveScene extends Container {
 
       this._trailGfx.clear()
       this._waveSystem.projectiles.forEach(p => {
+        if (p.isMelee) return
         p._trail.forEach((pos, i) => {
           const frac = (6 - i) / 6
           const alpha = frac * frac * 0.6

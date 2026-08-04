@@ -17,6 +17,7 @@ export class Tank extends BasePlayer {
       color: 0xD1D5DB,
       radius: 48,
       isMelee: true,
+      hidden: true,
       arcWidth: Math.PI * 0.8,
       stun: this.stats.stunStrike || false,
     }]
