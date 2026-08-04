@@ -75,6 +75,11 @@ class InputManager {
     this._joystick.cgy = gy
   }
 
+  setDimensions(gameW, gameH) {
+    this._gameW = gameW
+    this._gameH = gameH
+  }
+
   getMovement() {
     if (this.isMobile) {
       return { x: this._joystick.dx, y: this._joystick.dy }

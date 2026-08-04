@@ -19,12 +19,13 @@ const WORLD_W = 450
   })
 
   document.getElementById('game').appendChild(app.canvas)
+  inputManager.init(app.canvas, WORLD_W, window.innerHeight / (window.innerWidth / WORLD_W))
 
   function applyScale() {
     const scale = window.innerWidth / WORLD_W
     app.stage.scale.set(scale)
     sceneManager.viewportH = window.innerHeight / scale
-    inputManager.init(app.canvas, WORLD_W, sceneManager.viewportH)
+    inputManager.setDimensions(WORLD_W, sceneManager.viewportH)
   }
 
   window.addEventListener('resize', () => {
@@ -32,9 +33,8 @@ const WORLD_W = 450
     applyScale()
   })
 
-  applyScale()
-
   authState.loadFromStorage()
   sceneManager.init(app)
+  applyScale()
   sceneManager.go(new BootScene())
 })()
