@@ -2,6 +2,7 @@ class SceneManager {
   init(app) {
     this.app = app
     this.current = null
+    this.viewportH = 0
   }
 
   go(scene) {

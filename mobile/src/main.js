@@ -6,14 +6,13 @@ import { inputManager } from './core/InputManager.js'
 import { authState } from './core/AuthState.js'
 import { BootScene } from './scenes/BootScene.js'
 
-const GAME_W = 450
-const GAME_H = 800
+const WORLD_W = 450
 
 ;(async () => {
   const app = new Application()
   await app.init({
-    width: GAME_W,
-    height: GAME_H,
+    width: window.innerWidth,
+    height: window.innerHeight,
     backgroundColor: 0x0f172a,
     antialias: false,
     preference: 'webgl',
@@ -21,24 +20,21 @@ const GAME_H = 800
 
   document.getElementById('game').appendChild(app.canvas)
 
-  function fitCanvas() {
-    const sw = window.innerWidth
-    const sh = window.innerHeight
-    const ratio = Math.min(sw / GAME_W, sh / GAME_H)
-    const w = Math.floor(GAME_W * ratio)
-    const h = Math.floor(GAME_H * ratio)
-    app.canvas.style.width = `${w}px`
-    app.canvas.style.height = `${h}px`
-    app.canvas.style.position = 'absolute'
-    app.canvas.style.left = `${Math.floor((sw - w) / 2)}px`
-    app.canvas.style.top = `${Math.floor((sh - h) / 2)}px`
+  function applyScale() {
+    const scale = window.innerWidth / WORLD_W
+    app.stage.scale.set(scale)
+    sceneManager.viewportH = window.innerHeight / scale
+    inputManager.init(app.canvas, WORLD_W, sceneManager.viewportH)
   }
 
-  window.addEventListener('resize', fitCanvas)
-  fitCanvas()
+  window.addEventListener('resize', () => {
+    app.renderer.resize(window.innerWidth, window.innerHeight)
+    applyScale()
+  })
+
+  applyScale()
 
   authState.loadFromStorage()
-  inputManager.init(app.canvas, GAME_W, GAME_H)
   sceneManager.init(app)
   sceneManager.go(new BootScene())
 })()
