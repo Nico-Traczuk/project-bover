@@ -11,6 +11,12 @@ export const BIOMES = {
       castle: 0x5a3e1a,
       path: 0x2a4a1a,
     },
+    enemyPool: [
+      { key: 'goblin',        fromWave: 1  },
+      { key: 'glowing_wisp',  fromWave: 4  },
+      { key: 'expert_druid',  fromWave: 8  },
+      { key: 'magical_fairy', fromWave: 12 },
+    ],
   },
   dungeon: {
     key: 'dungeon',
@@ -24,6 +30,12 @@ export const BIOMES = {
       castle: 0x3a3a5a,
       path: 0x1a1a3a,
     },
+    enemyPool: [
+      { key: 'skeleton_archer', fromWave: 1  },
+      { key: 'dark_knight',     fromWave: 4  },
+      { key: 'ice_golem',       fromWave: 8  },
+      { key: 'shadow_mage',     fromWave: 12 },
+    ],
   },
   inferno: {
     key: 'inferno',
@@ -37,6 +49,12 @@ export const BIOMES = {
       castle: 0x5a1a1a,
       path: 0x3a1a1a,
     },
+    enemyPool: [
+      { key: 'fire_elemental',  fromWave: 1  },
+      { key: 'earth_elemental', fromWave: 4  },
+      { key: 'shadow_mage',     fromWave: 8  },
+      { key: 'water_elemental', fromWave: 12 },
+    ],
   },
 }
 
@@ -70,4 +88,12 @@ export function waveDamageMultiplier(wave) {
 
 export function waveGoldMultiplier(wave) {
   return 1 + wave * 0.08
+}
+
+export function enemyPoolForWave(biomeKey, wave) {
+  const biome = BIOMES[biomeKey]
+  if (!biome?.enemyPool) return ['goblin']
+  return biome.enemyPool
+    .filter(e => wave >= e.fromWave)
+    .map(e => e.key)
 }
